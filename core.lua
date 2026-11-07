@@ -17,13 +17,13 @@ M.addonName = ADDON or "Mercy"
 if not (Core and Core:Require(1, 17)) then
   M.disabled = true
   C_Timer.After(5, function()
-    print("|cffff6a5cMercy|r needs NorgannonDB Core 1.17 or newer; it is turned off.")
+    print("|cffffeea0Mercy|r needs NorgannonDB Core 1.17 or newer; it is turned off.")
   end)
   return
 end
 
-M.PREFIX = "|cffff6a5cMercy|r"
-M.ACCENT = { 1, 0.416, 0.361 }
+M.PREFIX = "|cffffeea0Mercy|r"
+M.ACCENT = { 1, 0.933, 0.627 }
 function M:Print(msg) Core:Print(msg, self.PREFIX) end
 M.IsSecret = Core.IsSecret
 

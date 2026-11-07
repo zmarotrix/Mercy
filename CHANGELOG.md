@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2, 2026-11-07
+
+- A new look: a pale holy yellow (`#ffeea0`) and a new mark, a halo over a falling drop of light. The red cross went: it's a protected
+  emblem. Needs NorgannonDB Core 1.17.2, which carries the mark and the colour.
+
 ## 0.1.1, 2026-11-07
 
 First look in game (a screenshot):
