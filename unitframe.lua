@@ -25,9 +25,8 @@ UF.LAYOUTS = {
 UF.LAYOUT_NAMES = { { "standard", "Standard" }, { "compact", "Compact" }, { "wide", "Wide" }, { "tiny", "Tiny" }, { "classic", "Classic" } }
 
 local BAR = "Interface\\TargetingFrame\\UI-StatusBar"
-local ROLE_FILE = "Interface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES"
-local ROLE_COORDS = { TANK = { 0, 19 / 64, 22 / 64, 41 / 64 }, HEALER = { 20 / 64, 39 / 64, 1 / 64, 20 / 64 },
-  DAMAGER = { 20 / 64, 39 / 64, 22 / 64, 41 / 64 } }
+-- the client's own small role icons (the ones its raid frames use)
+local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local HEALER_CLASSES = { PRIEST = true, DRUID = true, PALADIN = true, SHAMAN = true }
 
 -------------------------------------------------------------------------------------------
@@ -172,16 +171,13 @@ function UF:Create(parent, unit, name)
   b.status:SetPoint("CENTER", b.clip, "CENTER", 0, -2)
   b.status:SetTextColor(0.66, 0.63, 0.54)
   b.role = text:CreateTexture(nil, "OVERLAY")
-  b.role:SetTexture(ROLE_FILE)
-  b.role:SetSize(11, 11)
+  b.role:SetSize(12, 12)
   b.role:SetPoint("BOTTOMLEFT", b.clip, "BOTTOMLEFT", 2, 2)
   b.raidIcon = text:CreateTexture(nil, "OVERLAY")
   b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   b.raidIcon:SetSize(12, 12)
   b.raidIcon:SetPoint("TOP", b.content, "TOP", 0, 4)
-  for _, fs in ipairs({ b.name, b.value, b.status }) do
-    if UI.Glow then UI.Glow(fs) end
-  end
+  -- no UI.Glow here: its copies centre on the FontString, and these are left-aligned in a wider box (they ghosted)
 
   -- low health: a red wash whose strength comes from a curve, pulsing
   b.flashFrame = CreateFrame("Frame", nil, b.content)
@@ -420,8 +416,8 @@ end
 
 function UF:UpdateRole(b)
   local role = self:Role(b)
-  local coords = role and ROLE_COORDS[role]
-  if coords then b.role:SetTexCoord(unpack(coords)) b.role:Show() else b.role:Hide() end
+  local atlas = role and ROLE_ATLAS[role]
+  if atlas and b.role:SetAtlas(atlas) ~= false then b.role:Show() else b.role:Hide() end
 end
 
 function UF:UpdateRaidIcon(b)

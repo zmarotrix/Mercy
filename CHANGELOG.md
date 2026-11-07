@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1, 2026-11-07
+
+First look in game (a screenshot):
+- Names showed twice, the second copy shifted right: the suite's text glow centres its copies, and these names are left-aligned. Unit frames
+  use the font's shadow instead.
+- Role icons were a wrong cut of an old texture. They're the client's own small role icons now (`roleicon-tiny-*` atlases).
+
 ## 0.1.0, 2026-11-07
 
 First build: Stage 1 of `docs/mercy-v1.md`. Not yet run in game.
