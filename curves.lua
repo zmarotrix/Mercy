@@ -50,7 +50,7 @@ function Curves:Build()
   self.percent = numberCurve({ { 0, 0 }, { 1, 100 } })
   self.missingAlpha = numberCurve({ { 0, 1 }, { 1, 0 } }, "Step")     -- 1 while anything is missing
   self.lowHealth = numberCurve({ { 0, 1 }, { 0.25, 0 } }, "Step")    -- 1 below a quarter
-  self.gradient = colorCurve({ { 0, 0.85, 0.15, 0.1 }, { 0.35, 0.9, 0.35, 0.1 }, { 0.6, 0.85, 0.75, 0.15 }, { 1, 0.25, 0.75, 0.3 } })
+  self.gradient = colorCurve({ { 0, 0.85, 0.15, 0.1 }, { 0.35, 0.9, 0.35, 0.1 }, { 0.6, 0.85, 0.75, 0.15 }, { 1, 0.15, 0.85, 0.1 } })
   self:BuildDispel()
 end
 

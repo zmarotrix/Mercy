@@ -140,7 +140,7 @@ function UF:Create(parent, unit, name)
   -- health, with incoming heals and absorbs drawn after its fill; the clip keeps them inside the bar
   b.clip = CreateFrame("Frame", nil, b.content)
   if b.clip.SetClipsChildren then b.clip:SetClipsChildren(true) end
-  b.health = statusbar(b.clip, 0.25, 0.75, 0.3)
+  b.health = statusbar(b.clip, M.GREEN[1], M.GREEN[2], M.GREEN[3])
   b.health:SetAllPoints(b.clip)
   b.incAll = statusbar(b.clip, 0.45, 0.95, 0.5, 0.35)
   b.incMine = statusbar(b.clip, 0.65, 1, 0.7, 0.65)
@@ -244,7 +244,8 @@ function UF:ApplyLayout(b, key)
   b.power:SetShown(showPower)
   local barWidth = L.w - 2
   for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetWidth(barWidth) end
-  b.name:SetFontObject(UI.Font("bold", L.font))
+  -- an outline keeps class colours readable on a green bar (hunter green on green, shaman blue)
+  b.name:SetFontObject(UI.Font("bold", L.font, M.db.nameColor == "class" and "OUTLINE" or nil))
   b.name:SetWidth(L.w - (key == "tiny" and 6 or 40))
   b.value:SetFontObject(UI.Font("body", L.font - 1))
   b.value:SetShown(key ~= "tiny")
@@ -288,6 +289,8 @@ function UF:WantsPower(b)
 end
 
 function UF:UpdateName(b)
+  local c = M.db.nameColor == "class" and (rawget(_G, "RAID_CLASS_COLORS") or {})[self:Class(b) or ""]
+  if c then b.name:SetTextColor(c.r, c.g, c.b) else b.name:SetTextColor(1, 1, 1) end
   if b.fake then b.name:SetText(b.fake.name) return end
   local ok, name = pcall(UnitName, b.unit)
   if ok then M.Set(b.name, "SetText", name) end
@@ -303,7 +306,7 @@ function UF:UpdateColor(b)
     local c = (rawget(_G, "RAID_CLASS_COLORS") or {})[self:Class(b) or ""]
     if c then b.health:SetStatusBarColor(c.r * 0.8, c.g * 0.8, c.b * 0.8) return end
   end
-  b.health:SetStatusBarColor(0.25, 0.75, 0.3)
+  b.health:SetStatusBarColor(M.GREEN[1], M.GREEN[2], M.GREEN[3])
 end
 
 function UF:UpdateHealth(b)

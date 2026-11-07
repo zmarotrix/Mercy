@@ -24,6 +24,7 @@ end
 
 M.PREFIX = "|cffffeea0Mercy|r"
 M.ACCENT = { 1, 0.933, 0.627 }
+M.GREEN = { 0.15, 0.85, 0.1 }   -- the health bar's green: a clear, warm green, not the blue-ish one 0.1.x had
 function M:Print(msg) Core:Print(msg, self.PREFIX) end
 M.IsSecret = Core.IsSecret
 
@@ -90,7 +91,8 @@ M.DEFAULTS = {
   raidLayout = "compact",
   raidBy = "group",                 -- group: one column per raid group; block: one block in raid order
   partySort = "role",               -- role, class, name, none
-  color = "class",                  -- class, green, gradient
+  color = "green",                  -- class, green, gradient
+  nameColor = "class",              -- class or white
   text = "missing",                 -- missing, percent, none
   power = "healers",                -- healers, all, none
   range = true,
@@ -141,6 +143,11 @@ function M:InitDB()
   MercyDB = type(saved) == "table" and saved or {}
   fill(MercyDB, self.DEFAULTS)
   self.db = MercyDB
+  -- 0.1.3: green bars and class-coloured names became the defaults. Nobody chose class bars before, they were just the default.
+  if (self.db.schema or 1) < 2 then
+    if self.db.color == "class" then self.db.color = "green" end
+    self.db.schema = 2
+  end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")
   MercyCharDB = type(char) == "table" and char or {}

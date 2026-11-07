@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3, 2026-11-07
+
+- **Name colour** setting (Indicators): class or white. Class-coloured names, with a dark outline so they read on any bar, are the default.
+- **Green bars are the default**, and a brighter, purer green (the old one leaned blue). Saves from 0.1.0 to 0.1.2 move to green bars once,
+  since class bars were only ever the default there; choosing class bars again sticks.
+
 ## 0.1.2, 2026-11-07
 
 - A new look: a pale holy yellow (`#ffeea0`) and a new mark, a halo over a falling drop of light. The red cross went: it's a protected
