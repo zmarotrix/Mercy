@@ -1,0 +1,26 @@
+## Interface: 16001
+## Title: |cffff6a5cMercy|r
+## Category: NorgannonDB
+## Notes: Healer frames: party and raid frames you click to heal, with the debuffs you can remove lit up, in combat too. Powered by NorgannonDB. /mercy
+## Author: Maro
+## Version: 0.1.0
+## X-License: All Rights Reserved
+## Dependencies: NorgannonDB, NorgannonDB_Core
+## OptionalDeps: HealersMate, Clique
+## SavedVariables: MercyDB
+## SavedVariablesPerCharacter: MercyCharDB
+## IconTexture: Interface\AddOns\NorgannonDB_Core\media\marks\mercy
+## AddonCompartmentFunc: Mercy_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: Mercy_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: Mercy_OnAddonCompartmentLeave
+
+core.lua
+curves.lua
+binds.lua
+auras.lua
+unitframe.lua
+groups.lua
+tooltip.lua
+import.lua
+testmode.lua
+settings.lua
