@@ -16,15 +16,18 @@ UF.all = {}
 UF.byUnit = {}
 
 UF.LAYOUTS = {
-  standard = { w = 120, h = 44, power = 5, font = 12, icon = 14 },
-  compact = { w = 92, h = 38, power = 4, font = 11, icon = 12 },
-  wide = { w = 170, h = 40, power = 5, font = 13, icon = 16 },
+  standard = { w = 120, h = 44, power = 3, font = 12, icon = 14 },
+  compact = { w = 92, h = 38, power = 3, font = 11, icon = 12 },
+  wide = { w = 170, h = 40, power = 3, font = 13, icon = 16 },
   tiny = { w = 72, h = 26, power = 0, font = 10, icon = 10 },
-  classic = { w = 140, h = 36, power = 8, font = 12, icon = 14 },
+  classic = { w = 140, h = 36, power = 6, font = 12, icon = 14 },
 }
 UF.LAYOUT_NAMES = { { "standard", "Standard" }, { "compact", "Compact" }, { "wide", "Wide" }, { "tiny", "Tiny" }, { "classic", "Classic" } }
 
-local BAR = "Interface\\TargetingFrame\\UI-StatusBar"
+-- flat bars with a faint sheen on top: the modern look (Cell, Grid2, ElvUI), not the glossy 2006 bar texture
+local BAR = "Interface\\Buttons\\WHITE8X8"
+UF.POWER_COLORS = { MANA = { 0.24, 0.52, 1 }, RAGE = { 0.9, 0.25, 0.25 }, ENERGY = { 1, 0.85, 0.25 }, FOCUS = { 1, 0.6, 0.25 },
+  RUNIC_POWER = { 0, 0.82, 1 } }
 -- the client's own small role icons (the ones its raid frames use)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
 local HEALER_CLASSES = { PRIEST = true, DRUID = true, PALADIN = true, SHAMAN = true }
@@ -133,9 +136,14 @@ function UF:Create(parent, unit, name)
 
   b.content = CreateFrame("Frame", nil, b)
   b.content:SetAllPoints()
-  b.bg = b.content:CreateTexture(nil, "BACKGROUND")
-  b.bg:SetAllPoints()
-  b.bg:SetColorTexture(0.04, 0.04, 0.04, 0.92)
+  -- a 1 px black edge around a dark slate well: the slate is what shows where health is missing
+  b.edge = b.content:CreateTexture(nil, "BACKGROUND", nil, -8)
+  b.edge:SetAllPoints()
+  b.edge:SetColorTexture(0, 0, 0, 1)
+  b.bg = b.content:CreateTexture(nil, "BACKGROUND", nil, -7)
+  b.bg:SetPoint("TOPLEFT", 1, -1)
+  b.bg:SetPoint("BOTTOMRIGHT", -1, 1)
+  b.bg:SetColorTexture(0.1, 0.1, 0.11, 1)
 
   -- health, with incoming heals and absorbs drawn after its fill; the clip keeps them inside the bar
   b.clip = CreateFrame("Frame", nil, b.content)
@@ -154,25 +162,38 @@ function UF:Create(parent, unit, name)
   b.absorb:SetPoint("TOPLEFT", after, "TOPRIGHT")
   b.absorb:SetPoint("BOTTOMLEFT", after, "BOTTOMRIGHT")
 
-  b.power = statusbar(b.content, 0.2, 0.45, 0.9)
+  -- a faint light from the top of the bar
+  b.sheenFrame = CreateFrame("Frame", nil, b.clip)
+  b.sheenFrame:SetAllPoints(b.clip)
+  b.sheenFrame:SetFrameLevel(b.absorb:GetFrameLevel() + 1)
+  b.sheen = b.sheenFrame:CreateTexture(nil, "OVERLAY")
+  b.sheen:SetAllPoints()
+  b.sheen:SetTexture(BAR)
+  if b.sheen.SetGradient and CreateColor then
+    b.sheen:SetGradient("VERTICAL", CreateColor(0, 0, 0, 0.12), CreateColor(1, 1, 1, 0.12))
+  else
+    b.sheen:SetAlpha(0)
+  end
+
+  b.power = statusbar(b.content, 0.24, 0.52, 1)
 
   local text = CreateFrame("Frame", nil, b.content)
   text:SetAllPoints()
   text:SetFrameLevel(b.content:GetFrameLevel() + 5)
   b.name = text:CreateFontString(nil, "OVERLAY")
-  b.name:SetPoint("TOPLEFT", 4, -3)
+  b.name:SetPoint("LEFT", b.clip, "LEFT", 5, 0)
   b.name:SetJustifyH("LEFT")
   if b.name.SetWordWrap then b.name:SetWordWrap(false) end
   b.value = text:CreateFontString(nil, "OVERLAY")
-  b.value:SetPoint("TOPRIGHT", -4, -3)
+  b.value:SetPoint("RIGHT", b.clip, "RIGHT", -5, 0)
   b.value:SetJustifyH("RIGHT")
-  b.value:SetTextColor(1, 0.72, 0.66)
+  b.value:SetTextColor(1, 1, 1, 0.85)
   b.status = text:CreateFontString(nil, "OVERLAY")
-  b.status:SetPoint("CENTER", b.clip, "CENTER", 0, -2)
-  b.status:SetTextColor(0.66, 0.63, 0.54)
+  b.status:SetPoint("RIGHT", b.clip, "RIGHT", -5, 0)
+  b.status:SetTextColor(0.7, 0.7, 0.72)
   b.role = text:CreateTexture(nil, "OVERLAY")
-  b.role:SetSize(12, 12)
-  b.role:SetPoint("BOTTOMLEFT", b.clip, "BOTTOMLEFT", 2, 2)
+  b.role:SetSize(10, 10)
+  b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 2, -2)
   b.raidIcon = text:CreateTexture(nil, "OVERLAY")
   b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   b.raidIcon:SetSize(12, 12)
@@ -236,7 +257,7 @@ function UF:ApplyLayout(b, key)
   local showPower = L.power > 0 and self:WantsPower(b)
   b.clip:ClearAllPoints()
   b.clip:SetPoint("TOPLEFT", b.content, "TOPLEFT", 1, -1)
-  b.clip:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -1, showPower and (L.power + 1) or 1)
+  b.clip:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -1, showPower and (L.power + 2) or 1)   -- 1 px gap over the power strip
   b.power:ClearAllPoints()
   b.power:SetPoint("BOTTOMLEFT", b.content, "BOTTOMLEFT", 1, 1)
   b.power:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -1, 1)
@@ -246,10 +267,10 @@ function UF:ApplyLayout(b, key)
   for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetWidth(barWidth) end
   -- an outline keeps class colours readable on a green bar (hunter green on green, shaman blue)
   b.name:SetFontObject(UI.Font("bold", L.font, M.db.nameColor == "class" and "OUTLINE" or nil))
-  b.name:SetWidth(L.w - (key == "tiny" and 6 or 40))
-  b.value:SetFontObject(UI.Font("body", L.font - 1))
+  b.name:SetWidth(L.w - (key == "tiny" and 8 or 46))
+  b.value:SetFontObject(UI.Font("body", L.font - 1, "OUTLINE"))
   b.value:SetShown(key ~= "tiny")
-  b.status:SetFontObject(UI.Font("body", L.font - 1))
+  b.status:SetFontObject(UI.Font("body", L.font - 1, "OUTLINE"))
   for i, icon in ipairs(b.debuffs) do
     icon:SetSize(L.icon, L.icon)
     icon:ClearAllPoints()
@@ -395,8 +416,8 @@ function UF:UpdatePower(b)
     M.Set(b.power, "SetValue", p)
   end
   local _, token = M.Plain(UnitPowerType, unit)
-  local c = token and rawget(_G, "PowerBarColor") and PowerBarColor[token]
-  if c then b.power:SetStatusBarColor(c.r, c.g, c.b) else b.power:SetStatusBarColor(0.2, 0.45, 0.9) end
+  local c = UF.POWER_COLORS[token or "MANA"] or UF.POWER_COLORS.MANA
+  b.power:SetStatusBarColor(c[1], c[2], c[3])
 end
 
 function UF:UpdateStatus(b)
@@ -420,7 +441,8 @@ end
 function UF:UpdateRole(b)
   local role = self:Role(b)
   local atlas = role and ROLE_ATLAS[role]
-  if atlas and b.role:SetAtlas(atlas) ~= false then b.role:Show() else b.role:Hide() end
+  local tiny = b.layout and b.layout.h < 30
+  if atlas and not tiny and b.role:SetAtlas(atlas) ~= false then b.role:Show() else b.role:Hide() end
 end
 
 function UF:UpdateRaidIcon(b)

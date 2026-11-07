@@ -14,7 +14,7 @@ M.Groups = Groups
 Groups.frames = {}
 Groups.buttons = {}
 
-local GAP = 2
+local GAP = 3
 local MAX_TANKS = 4
 
 local function range(prefix, from, to)

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4, 2026-11-07
+
+A modern look (it read like classic HealBot):
+- Flat bars with a faint sheen from the top, instead of the glossy old bar texture.
+- A crisp 1 px black edge around a dark slate well; the slate is what shows where health is missing.
+- A thin 3 px power strip with a 1 px gap (6 px in the Classic layout), in softer power colours.
+- The name sits in the middle on the left, missing health on the right, both outlined; the role icon is small, in the top corner.
+- 3 px between frames.
+
 ## 0.1.3, 2026-11-07
 
 - **Name colour** setting (Indicators): class or white. Class-coloured names, with a dark outline so they read on any bar, are the default.
