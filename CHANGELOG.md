@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.15, 2026-11-07
+
+- **Fixed:** empty Target and Focus groups showed their names in test mode (and with panels off). An empty group now shows nothing unless
+  /mercy unlock asks to see every group. A group with people in it shows its name as the handle to drag it by while the frames are
+  unlocked, with or without panels.
+
 ## 0.2.14, 2026-11-07
 
 - **The game's own raid frame dispel display is the default, in and out of combat:** the gradient, border and type icon the default

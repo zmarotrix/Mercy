@@ -349,13 +349,16 @@ function Groups:FitPanel(g)
   local strip = (g.key == "party" or g.key == "raid") and 20 or 0   -- the bottom strip: dispels, buffs, the rebuff button
   g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28 + strip)
   -- the panel and its name: only when someone's in it (unless you're moving the frames), at this group's opacity
-  local moving = M.showAll or (M.Test and M.Test.active)   -- every group's name shows, empty or not, to be found and moved
-  local showPanel = M.db.panels and (moving or not empty or not M.db.hideEmpty)
+  -- an empty group (no target, no focus) shows nothing, unless /mercy unlock asked to see every group to move it
+  local showAll = M.showAll
+  local showPanel = M.db.panels and (showAll or not empty or not M.db.hideEmpty)
   local alpha = M:Group(g.key).alpha or 0.88
   g.panel.fill:SetColor(UI.C.stone, alpha)
   g.panel.line:SetColor(UI.C.lineStrong, math.min(0.9, alpha * 1.1))
   g.panel:SetShown(showPanel and true or false)
-  g.label:SetShown((showPanel or moving) and true or false)
+  -- the name: on its panel, or as the handle to drag the group by while the frames are unlocked; never for an empty group
+  local showLabel = showAll or showPanel or (not empty and not M.db.locked)
+  g.label:SetShown(showLabel and true or false)
 end
 
 ---"Dispel 2  ·  Power Word: Fortitude 3": who needs you, counted per group.
