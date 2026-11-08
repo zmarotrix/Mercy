@@ -266,7 +266,8 @@ function UF:Create(parent, unit, name)
   end
   b.role = text:CreateTexture(nil, "OVERLAY")
   b.role:SetSize(11, 11)
-  b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 3, -3)   -- until PlaceIcons puts it beside the name
+  -- the middle of the left edge, between the game's dispel-type icons (top left) and debuff icons (bottom left)
+  b.role:SetPoint("LEFT", b.health, "LEFT", 4, 0)
   -- a dark disc behind it, so the pale role art reads on a bright bar
   b.roleBg = text:CreateTexture(nil, "ARTWORK")
   b.roleBg:SetSize(16, 16)
@@ -440,23 +441,20 @@ function UF:UpdateName(b)
   self:PlaceIcons(b)
 end
 
----The role icon just left of the name and the raid mark just right of it, where they can't sit under the game's aura icons.
+---The raid mark just right of the name (the role icon has its own spot, the middle of the left edge).
 ---A plain name is measured and cut to its box. A secret one (the game hides some units' names from add-ons, and then its
 ---width too) can't be measured, so it sizes itself to its text and the icons hang off its edges: no number is read.
 function UF:PlaceIcons(b)
   local box = b.nameBox or 0
   local ok, w = pcall(b.name.GetStringWidth, b.name)
   local plain = ok and type(w) == "number" and not (issecretvalue and issecretvalue(w))
-  b.role:ClearAllPoints()
   b.raidIcon:ClearAllPoints()
   if plain then
     b.name:SetWidth(box)
     local half = math.floor(math.min(w, box) / 2 + 0.5)
-    b.role:SetPoint("RIGHT", b.name, "CENTER", -half - 5, 0)
     b.raidIcon:SetPoint("LEFT", b.name, "CENTER", half + 2, 0)
   else
     b.name:SetWidth(0)
-    b.role:SetPoint("RIGHT", b.name, "LEFT", -5, 0)
     b.raidIcon:SetPoint("LEFT", b.name, "RIGHT", 2, 0)
   end
 end

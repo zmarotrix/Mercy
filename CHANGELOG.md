@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.8, 2026-11-08
+
+- The role icon moved to the middle of the frame's left edge, between the dispel-type and debuff icons.
+
 ## 0.3.7, 2026-11-08
 
 - Role icons sit on a small dark disc, so they read on the bright green bar.
