@@ -1,9 +1,10 @@
 -- Debuffs: the dispel highlight and the debuff icons, in and out of combat (docs/mercy-v1.md section 3).
 --
 -- Two ways, both from the client's own docs, and the probe (/hprobe) says which works in game:
---   B, ours: C_UnitAuras.GetUnitAuraInstanceIDs(unit, "HARMFUL|RAID") isn't marked secret, so how many debuffs you
---      can remove is a plain count even in combat. GetAuraDispelTypeColor gives the first one's colour, secret in
---      combat, which a texture takes without our reading it. That draws Mercy's highlight.
+--   B, ours: C_UnitAuras.GetUnitAuraInstanceIDs(unit, "HARMFUL|RAID") counts the debuffs you can remove, and
+--      GetAuraDispelTypeColor gives the first one's colour, which a texture takes without our reading it. That draws
+--      Mercy's highlight, out of combat only: ApiProbe found these calls error in combat for add-ons ("Auras cannot
+--      be accessed when secret while tainted"), so Auras.Ids doesn't ask then and Blizzard's overlay (A) takes over.
 --   A, Blizzard's: C_UnitAuras.AddPrivateAuraAnchor with isContainer, the call the game's own raid frames make. The
 --      secure Blizzard_PrivateAurasUI then draws the debuff icons (and, as a setting, its dispel overlay) on our frame.
 -- If B's count turns out secret, the highlight falls back to A's overlay. If A is refused, our own icons stand in.

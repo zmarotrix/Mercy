@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1, 2026-11-07
+
+- The text boxes in Mercy's settings (click-casting, Add a buff, the HealersMate import) are the suite's own, not
+  Blizzard's, so they match the rest of the window.
+
 ## 0.3.0, 2026-11-07
 
 - Built on NorgannonDB Core 1.20's `Core:NewAddon` and its client calls. Same commands; `/mercy help` lists them.
