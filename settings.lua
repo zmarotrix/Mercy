@@ -12,7 +12,7 @@ M.Settings = Settings
 
 local W, H = 640, 580
 local TABS = { { key = "frames", label = "Frames" }, { key = "binds", label = "Click-casting" },
-  { key = "indicators", label = "Indicators" }, { key = "healersmate", label = "HealersMate" } }
+  { key = "indicators", label = "Indicators" }, { key = "buffs", label = "Buffs" }, { key = "healersmate", label = "HealersMate" } }
 
 local win
 
@@ -257,20 +257,6 @@ Settings.panes.indicators = function(parent)
   list:Slider("Most debuff icons", nil, 1, 5, 1, function() return M.db.maxDebuffs end, function(v) M.db.maxDebuffs = v changed() end, "%.0f", 1)
   list:Toggle("Your buffs", "Your HoTs and buffs on each person, with their time, bottom right. In combat Blizzard's own code draws them.", opt("myBuffs"))
   list:Slider("Most buff icons", nil, 1, 5, 1, function() return M.db.maxBuffs end, function(v) M.db.maxBuffs = v changed() end, "%.0f", 1)
-  list:Header("Buffs you give")
-  list:Toggle("Who needs your buffs", "Out of combat, a small icon on anyone missing one of your buffs or about to lose it, and a count by the group's name.",
-    opt("buffReminders"))
-  list:Toggle("Rebuff button", "By the group's name: each click casts the buff on the next person who needs it, or the party version when three need it.",
-    opt("rebuffButton"))
-  list:Slider("Rebuff when less than", nil, 1, 15, 1, function() return M.db.rebuffMinutes end,
-    function(v) M.db.rebuffMinutes = v changed() end, "%.0f min", 1)
-  for _, e in ipairs(M.Buffs.LIST[M.class or ""] or {}) do
-    local name = M.Plain(M.Fn("C_Spell", "GetSpellInfo"), e.id)
-    name = type(name) == "table" and name.name or e.key
-    list:Toggle(name, e.who == "mana" and "Mana users only." or e.who == "tanks" and "Tanks only." or nil,
-      function() local v = (M.db.buffTrack or {})[e.key] if v == nil then return e.on end return v end,
-      function(on) M.db.buffTrack[e.key] = on changed() end)
-  end
   list:Header("Health")
   list:Dropdown("Bar colour", nil, { { "class", "Class" }, { "green", "Green" }, { "gradient", "Green to red" } }, opt("color"))
   list:Dropdown("Name colour", nil, { { "class", "Class" }, { "white", "White" } }, opt("nameColor", "layout"))
@@ -284,6 +270,63 @@ Settings.panes.indicators = function(parent)
   list:Header("What the client allows here")
   list:Buttons("Check", "Says in chat whether Mercy's highlight and Blizzard's aura drawing are working on this client.",
     { { "Status", function() M:PrintStatus() end } })
+  return list
+end
+
+-------------------------------------------------------------------------------------------
+-- Buffs: who needs yours, and which ones Mercy tracks
+-------------------------------------------------------------------------------------------
+
+Settings.panes.buffs = function(parent)
+  local list = UI.SettingsList(parent)
+  list:Header("Who needs your buffs")
+  list:Toggle("Buff reminders", "Out of combat (the game hides buff names in combat), small icons on each frame's top right.",
+    opt("buffReminders"))
+  list:Dropdown("Show icons for", "What's missing: the buffs someone needs from you. What they have: the ones they've got.",
+    { { "missing", "What's missing" }, { "buffed", "What they have" } }, opt("buffShow"))
+  list:Toggle("Rebuff button", "Under the group: each click casts the buff on the next person who needs it, or the party version when three need it.",
+    opt("rebuffButton"))
+  list:Slider("Rebuff when less than", nil, 1, 15, 1, function() return M.db.rebuffMinutes end,
+    function(v) M.db.rebuffMinutes = v changed() end, "%.0f min", 1)
+
+  list:Header("Tracked buffs")
+  for _, e in ipairs(M.Buffs:All()) do
+    local choices = {}
+    for _, w in ipairs(M.Buffs.WHO) do choices[#choices + 1] = w end
+    if e.custom then choices[#choices + 1] = { "remove", "Remove" } end
+    local desc = e.custom and (e.known and "Added by you." or "Added by you. You can't cast it, so it's tracked but not on the rebuff button.") or nil
+    list:Dropdown(e.name, desc, choices, function() return e.who end, function(who)
+      M.Buffs:SetWho(e, who)
+      e.who = who
+      if who == "remove" then Settings:Rebuild("buffs") end
+    end)
+  end
+
+  -- adding one: type its name or drag it from your spellbook
+  local row = list:Buttons("Add a buff", "Type its name or drag it here from your spellbook, then Add. Any buff works: Fear Ward, Power Infusion, Amplify Magic.",
+    { { "Add", function() end } })
+  local holder = row.control
+  local box = CreateFrame("EditBox", nil, holder, "InputBoxTemplate")
+  box:SetSize(100, 20)
+  box:SetPoint("RIGHT", holder.button1, "LEFT", -8, 0)
+  box:SetAutoFocus(false)
+  box:SetFontObject(UI.Font("body", 12))
+  local function add()
+    local name = box:GetText()
+    if M.Buffs:Add(name) then
+      box:SetText("")
+      Settings:Rebuild("buffs")
+    elseif strtrim(name or "") ~= "" then
+      M:Print(name .. " is already tracked.")
+    end
+  end
+  holder.button1:SetScript("OnClick", add)
+  box:SetScript("OnEnterPressed", function(self) add() self:ClearFocus() end)
+  box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+  box:SetScript("OnReceiveDrag", function(self)
+    local text = spellFromCursor()
+    if text then self:SetText(text) ClearCursor() add() end
+  end)
   return list
 end
 
@@ -384,6 +427,16 @@ function Settings:Open(tab)
   win.tabs:Select(self.tab, true)
   win:Show()
   show(self.tab)
+end
+
+---A pane whose rows depend on data (the buff list): drop it and build it again.
+function Settings:Rebuild(key)
+  local p = self.built and self.built[key]
+  if p then
+    p.frame:Hide()
+    self.built[key] = nil
+  end
+  if win and win:IsShown() and self.tab == key then show(key) end
 end
 
 function Settings:Refresh()

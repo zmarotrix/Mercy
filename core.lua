@@ -109,7 +109,10 @@ M.DEFAULTS = {
   buffReminders = true,             -- who needs your buffs, out of combat
   rebuffButton = true,              -- the button that casts the next one
   rebuffMinutes = 5,                -- a buff with less than this left counts as needed
-  buffTrack = {},                   -- [key] = on/off, for your class's buffs
+  buffTrack = {},                   -- [key] = on/off, for your class's buffs (older saves; buffWho replaces it)
+  buffWho = {},                     -- [key] = "off", "all", "mana" or "tanks": who your class's buffs are for
+  customBuffs = {},                 -- { { name, who } }: buffs you added yourself
+  buffShow = "missing",             -- marks show what's "missing", or what they're "buffed" with
   maxBuffs = 3,
   maxDebuffs = 3,
   aggro = true,

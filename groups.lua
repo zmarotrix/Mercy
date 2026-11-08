@@ -101,10 +101,13 @@ function Groups:BuildGroup(key)
   g.panel.line:SetColor(UI.C.lineStrong, 0.9)
   g.label = makeLabel(g, key)
   -- how many need a dispel (in combat too) and your buffs (out of combat), on the label's right
-  g.summary = g.label:CreateFontString(nil, "OVERLAY")
+  -- in a strip along the panel's bottom, so the group's name has the top to itself
+  g.summary = g.panel:CreateFontString(nil, "OVERLAY")
   g.summary:SetFontObject(UI.Font("body", 11))
-  g.summary:SetPoint("RIGHT", g.label, "RIGHT", -22, 0)
-  g.summary:SetJustifyH("RIGHT")
+  g.summary:SetPoint("BOTTOMLEFT", g.panel, "BOTTOMLEFT", 8, 6)
+  g.summary:SetPoint("BOTTOMRIGHT", g.panel, "BOTTOMRIGHT", -26, 6)
+  g.summary:SetJustifyH("LEFT")
+  if g.summary.SetWordWrap then g.summary:SetWordWrap(false) end
   g.buttons = {}
   local units = def.units
   if def.slots then units = {} for i = 1, def.slots do units[i] = "raid" .. i end end
@@ -339,7 +342,8 @@ function Groups:FitPanel(g)
   end
   local empty = rows == 0
   cols, rows = math.max(cols, 1), math.max(rows, 1)
-  g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28)
+  local strip = (g.key == "party" or g.key == "raid") and 20 or 0   -- the bottom strip: dispels, buffs, the rebuff button
+  g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28 + strip)
   -- the panel and its name: only when someone's in it (unless you're moving the frames), at this group's opacity
   local moving = not M.db.locked or (M.Test and M.Test.active)
   local showPanel = M.db.panels and (moving or not empty or not M.db.hideEmpty)

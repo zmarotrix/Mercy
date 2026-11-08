@@ -35,6 +35,9 @@ your blessings), or about to lose it, has its icon on their frame, and the group
 on the next person who needs it, or the party version when three in one party do. Every click is one cast you make yourself. In combat
 the reminders step aside (the game hides buff names then) and come back after. Your own buffs on people show with their time throughout.
 
+The Buffs tab sets who each buff is for (everyone, mana users, tanks, or off), adds any other buff by name or by dragging it from
+your spellbook, and can flip the icons to show what people have rather than what they're missing.
+
 ### Click-casting
 Every mouse button (left, right, middle, 4 and 5) with no modifier, Shift, Ctrl, Alt or any mix, separately for friendly and hostile
 frames. A bind can be a spell (`Renew`, or `Heal(Rank 2)`), `Item: name`, `Macro: name`, Target, Assist, Focus, Context (the menu),

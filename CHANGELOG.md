@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.5, 2026-11-07
+
+- **A Buffs tab:** each tracked buff can be for Everyone, Mana users, Tanks or Off; add any other buff by typing its name or dragging it
+  from your spellbook (Fear Ward, Power Infusion, Amplify Magic), and remove it again. One you can't cast is tracked but never offered on
+  the rebuff button. Your class's buffs are still set up by default.
+- **Show icons for:** What's missing (as before) or What they have. Up to three icons per frame either way, faded when a buff is running out.
+- The dispel and buff counts and the rebuff button moved to a strip along the bottom of the group's panel, so the name has the top to itself.
+
 ## 0.2.4, 2026-11-07
 
 - **Not bound yet:** beside the click-casting boxes, your spells that aren't bound to anything. On Friendly, every healing and helpful

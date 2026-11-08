@@ -41,14 +41,30 @@ local function spellInfo(id)
   if type(info) == "table" then return info.name, info.iconID end
 end
 
----The buffs you can give and have on, with their names resolved. Rebuilt when your spells or the settings change.
-function Buffs:Active()
-  if self.active then return self.active end
+Buffs.WHO = { { "off", "Off" }, { "all", "Everyone" }, { "mana", "Mana users" }, { "tanks", "Tanks" } }
+
+local function copy(e)
+  local t = {}
+  for k, v in pairs(e) do t[k] = v end
+  return t
+end
+
+---Who a default buff is for now: your setting (buffWho), the older on/off (buffTrack), or its own default.
+function Buffs:Who(e)
+  local who = (M.db.buffWho or {})[e.key]
+  if who then return who end
+  local on = (M.db.buffTrack or {})[e.key]
+  if on == false then return "off" end
+  if on == nil and not e.on then return "off" end
+  return e.who
+end
+
+---Every buff Mercy knows of for you: your class's defaults and the ones you added, each with who it's for (even "off").
+---Each entry has key, name, icon, who, known, custom.
+function Buffs:All()
   local out = {}
-  local track = M.db.buffTrack or {}
-  for _, e in ipairs(self.LIST[M.class or ""] or {}) do
-    local on = track[e.key]
-    if on == nil then on = e.on end
+  for _, base in ipairs(self.LIST[M.class or ""] or {}) do
+    local e = copy(base)
     local name, icon = spellInfo(e.id)
     local groupName = e.group and spellInfo(e.group)
     local known = (name and M.Knows(name)) or (groupName and M.Knows(groupName))
@@ -60,13 +76,61 @@ function Buffs:Active()
         if n then e.names[#e.names + 1] = n if M.Knows(n) then known = true end end
       end
     end
-    if on and known and name then
+    if known and name then
       e.name, e.icon, e.groupName = name, icon, groupName and M.Knows(groupName) and groupName or nil
+      e.who, e.known = self:Who(base), true
       out[#out + 1] = e
     end
   end
+  for _, c in ipairs(M.db.customBuffs or {}) do
+    if type(c) == "table" and type(c.name) == "string" and c.name ~= "" then
+      local info = M.Plain(M.Fn("C_Spell", "GetSpellInfo"), c.name)
+      out[#out + 1] = { key = "custom:" .. string.lower(c.name), name = type(info) == "table" and info.name or c.name,
+        icon = type(info) == "table" and info.iconID or 134400, who = c.who or "all", custom = true, known = M.Knows(c.name) }
+    end
+  end
+  return out
+end
+
+---The buffs being tracked (who isn't "off"). Rebuilt when your spells or the settings change.
+function Buffs:Active()
+  if self.active then return self.active end
+  local out = {}
+  for _, e in ipairs(self:All()) do
+    if e.who ~= "off" then out[#out + 1] = e end
+  end
   self.active = out
   return out
+end
+
+---Adds a buff of your own choosing, by name, tracked for everyone until you say otherwise. False if it's already there.
+function Buffs:Add(name)
+  name = name and strtrim(name) or ""
+  if name == "" then return false end
+  M.db.customBuffs = M.db.customBuffs or {}
+  for _, c in ipairs(M.db.customBuffs) do
+    if string.lower(c.name) == string.lower(name) then return false end
+  end
+  local info = M.Plain(M.Fn("C_Spell", "GetSpellInfo"), name)
+  table.insert(M.db.customBuffs, { name = type(info) == "table" and info.name or name, who = "all" })
+  self:Reset()
+  return true
+end
+
+---Who a buff is for ("off", "all", "mana", "tanks"), or "remove" for one you added.
+function Buffs:SetWho(e, who)
+  if e.custom then
+    for i, c in ipairs(M.db.customBuffs or {}) do
+      if "custom:" .. string.lower(c.name) == e.key then
+        if who == "remove" then table.remove(M.db.customBuffs, i) else c.who = who end
+        break
+      end
+    end
+  else
+    M.db.buffWho = M.db.buffWho or {}
+    M.db.buffWho[e.key] = who
+  end
+  self:Reset()
 end
 
 function Buffs:Reset()
@@ -115,21 +179,27 @@ function Buffs:Scan()
     if SCANNED[key] then
       local counts, needers = {}, {}
       for _, e in ipairs(active) do counts[e.key], needers[e.key] = 0, {} end
+      local showBuffed = M.db.buffShow == "buffed"
       for _, b in ipairs(g.buttons) do
-        local need
+        local marks = {}
         if b.fake then
-          need = b.fake.needBuff and active[1] and { entry = active[1], state = "missing" } or nil
+          local e = active[1]
+          if e and (b.fake.needBuff == not showBuffed) then marks[1] = { entry = e, state = showBuffed and "has" or "missing" } end
         elseif eligible(b) then
           for _, e in ipairs(active) do
             local state = self:State(b, e)
-            if state == "missing" or state == "expiring" then
+            local needs = state == "missing" or state == "expiring"
+            if needs then
               counts[e.key] = counts[e.key] + 1
               table.insert(needers[e.key], b)
-              need = need or { entry = e, state = state }
+            end
+            -- "missing": what they need from you; "buffed": what they have (faded when it's running out, either way)
+            if state and ((not showBuffed and needs) or (showBuffed and state ~= "missing")) then
+              marks[#marks + 1] = { entry = e, state = state }
             end
           end
         end
-        self:Mark(b, need)
+        self:Mark(b, marks)
       end
       self.counts[key] = counts
       if key ~= "tanks" then self:SetButton(g, active, counts, needers) end
@@ -142,19 +212,26 @@ function Buffs:ScanSoon()
   Core:NextFrame(function() Buffs:Scan() end, "mercy-buffs")
 end
 
----The small icon on a frame: the buff this person needs. Faded when it's only running out.
-function Buffs:Mark(b, need)
-  local t = b.needBuff
-  if not t then return end
-  if not need then t:Hide() return end
-  t:SetTexture(need.entry.icon)
-  t:SetAlpha(need.state == "expiring" and 0.55 or 1)
-  t:Show()
+---The small icons on a frame's top right, up to three: the buffs this person needs from you, or (Show: Buffed) the ones they
+---have. Faded when a buff is running out.
+function Buffs:Mark(b, marks)
+  local list = b.buffMarks
+  if not list then return end
+  for i, t in ipairs(list) do
+    local m = marks and marks[i]
+    if m then
+      t:SetTexture(m.entry.icon)
+      t:SetAlpha(m.state == "expiring" and 0.55 or 1)
+      t:Show()
+    else
+      t:Hide()
+    end
+  end
 end
 
 function Buffs:HideAll()
   if not M.Groups then return end
-  for _, b in ipairs(M.Groups:Buttons()) do if b.needBuff then b.needBuff:Hide() end end
+  for _, b in ipairs(M.Groups:Buttons()) do self:Mark(b, nil) end
   for _, g in pairs(M.Groups.frames) do
     if g.rebuff and not M.InCombat() then g.rebuff:Hide() end
   end
@@ -181,7 +258,7 @@ end
 function Buffs:Next(active, counts, needers)
   for _, e in ipairs(active) do
     local list = needers[e.key]
-    if list and #list > 0 then
+    if list and #list > 0 and e.known then   -- a buff you added but can't cast is tracked, not offered
       if e.groupName then
         local bySub = {}
         for _, b in ipairs(list) do
@@ -212,8 +289,7 @@ end
 function Buffs:Button(g)
   if g.rebuff then return g.rebuff end
   local btn = CreateFrame("Button", "MercyRebuff_" .. g.key, g, "SecureActionButtonTemplate")
-  btn:SetSize(18, 18)
-  btn:SetPoint("BOTTOMRIGHT", g, "TOPRIGHT", 0, 3)
+  btn:SetSize(16, 16)
   btn:RegisterForClicks("AnyUp", "AnyDown")
   btn:SetAttribute("type", "spell")
   btn.icon = btn:CreateTexture(nil, "ARTWORK")
@@ -249,6 +325,13 @@ function Buffs:SetButton(g, active, counts, needers)
   if not n then btn:Hide() return end
   btn:SetAttribute("spell", n.spell)
   btn:SetAttribute("unit", n.unit)
+  -- in the panel's bottom strip, under the last person shown (secure, so placed out of combat; the panel itself resizes in combat)
+  local last
+  for _, b in ipairs(g.buttons) do
+    if (b:IsShown() or b.fake) and b.row and (not last or b.row > last.row or (b.row == last.row and b.col > last.col)) then last = b end
+  end
+  btn:ClearAllPoints()
+  btn:SetPoint("TOPRIGHT", last or g, "BOTTOMRIGHT", 0, -3)
   local _, icon = spellInfo(n.entry.id)
   btn.icon:SetTexture(icon or n.entry.icon)
   btn.count:SetText(n.count > 1 and n.count or "")
