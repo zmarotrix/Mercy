@@ -31,7 +31,6 @@ local MEDIA = "Interface\\AddOns\\Mercy\\media\\"
 local ART = {
   health = "RaidFrame-Hp-Fill", healthBg = "raidframe-hp-bg-white",
   power = "_RaidFrame-Resource-Fill", powerBg = "_RaidFrame-Resource-Background",
-  target = "RaidFrame-TargetFrame", aggro = "RaidFrame-AgroFrame",
 }
 local function hasAtlas(name)
   local info = M.Plain(M.Fn("C_Texture", "GetAtlasInfo"), name)
@@ -301,32 +300,20 @@ function UF:Create(parent, unit, name)
   b.flash:SetColorTexture(1, 0.15, 0.1, 0.28)
   b.flash:SetAlpha(0)
 
-  -- borders: your target and aggro, the game's own rounded raid frame art; thin lines if the client lacks it
-  local function border(atlas, r, g, bl, level)
+  -- borders: aggro (red) and your target (white). A thin rounded line just outside the card, so it outlines the frame without
+  -- covering the bars (the game's aggro art was thick and sat on the mana bar). Alpha only, so it can change in combat.
+  local function border(r, g, bl, level, out)
     local f = CreateFrame("Frame", nil, b.content)
-    f:SetAllPoints()
+    f:SetPoint("TOPLEFT", b.content, "TOPLEFT", -out, out)
+    f:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", out, -out)
     f:SetFrameLevel(b.content:GetFrameLevel() + level)
-    local t = f:CreateTexture(nil, "OVERLAY")
-    t:SetAllPoints()
-    if hasAtlas(atlas) and t.SetAtlas then
-      t:SetAtlas(atlas, false)
-      if atlas == ART.aggro then t:SetVertexColor(r, g, bl, 1) end
-    else
-      t:SetTexture(nil)
-      for _, p in ipairs({ { "TOPLEFT", "TOPRIGHT", nil, 1 }, { "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1 }, { "TOPLEFT", "BOTTOMLEFT", 1, nil },
-        { "TOPRIGHT", "BOTTOMRIGHT", 1, nil } }) do
-        local e = f:CreateTexture(nil, "OVERLAY")
-        e:SetColorTexture(r, g, bl, 1)
-        e:SetPoint(p[1]) e:SetPoint(p[2])
-        if p[3] then e:SetWidth(p[3]) end
-        if p[4] then e:SetHeight(p[4]) end
-      end
-    end
+    f.line = UI.Round(f, "OVERLAY", 0, 6, "line")
+    f.line:SetColor({ r, g, bl }, 1)
     f:SetAlpha(0)
     return f
   end
-  b.aggro = border(ART.aggro, 0.9, 0.15, 0.1, 6)
-  b.targetBorder = border(ART.target, 1, 1, 1, 7)
+  b.aggro = border(0.95, 0.2, 0.15, 6, 2)
+  b.targetBorder = border(1, 1, 1, 7, 1)
 
   b.highlight = makeHighlight(b.content)
   b.container = CreateFrame("Frame", nil, b.content)       -- Blizzard's aura container draws here (A)

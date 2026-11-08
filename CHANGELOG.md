@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.8, 2026-11-07
+
+- Aggro is a thin rounded red line just outside the frame, instead of the game's thick aggro art that covered the mana bar. Your
+  target's white border matches it.
+
 ## 0.2.7, 2026-11-07
 
 - **Dragging works again:** grab a group by its name, out of combat. 0.2.3 locked every save so empty panels could hide, which also
