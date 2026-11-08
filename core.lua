@@ -85,7 +85,7 @@ M.GROUPS = { "party", "raid", "tanks", "pets", "target", "focus" }
 
 M.DEFAULTS = {
   locked = false,                   -- true: groups can't be dragged by their names (Lock the frames, /mercy lock)
-  hideBlizzard = true,
+  hideBlizzard = false,             -- Blizzard's party and raid frames stay unless you hide them (Frames tab)
   soloParty = true,                 -- party frames (you alone) when not in a group
   layout = "standard",              -- standard, compact, wide, tiny, classic
   raidLayout = "compact",
@@ -175,6 +175,11 @@ function M:InitDB()
   if self.db.schema < 5 then
     self.db.locked = false
     self.db.schema = 5
+  end
+  -- 0.2.10: Blizzard's party and raid frames aren't hidden by default any more (they were only ever hidden by default)
+  if self.db.schema < 6 then
+    self.db.hideBlizzard = false
+    self.db.schema = 6
   end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")

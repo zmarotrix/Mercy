@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.10, 2026-11-07
+
+- Blizzard's party and raid frames are left alone by default; "Hide Blizzard's party and raid frames" (Frames tab) hides them. Saves that
+  had the old default show them again after a /reload.
+
 ## 0.2.9, 2026-11-07
 
 - **A "Buff" bind:** put `Buff` on any button, and a click casts the buff that person is missing from you (whatever the Buffs tab tracks;
