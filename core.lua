@@ -95,6 +95,7 @@ M.DEFAULTS = {
   nameColor = "class",              -- class or white
   panels = true,                    -- a rounded panel behind each group, with its name
   text = "current",                 -- current, missing, percent, none
+  shortNumbers = false,             -- 1.3K instead of 1339
   power = "healers",                -- healers, all, none
   range = true,
   rangeAlpha = 0.4,

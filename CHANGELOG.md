@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1, 2026-11-07
+
+- Health shows in full (1339, not 1.3K), current and missing alike, in combat too. "Short numbers" (Indicators) brings the short form back.
+
 ## 0.2.0, 2026-11-07
 
 Helping you buff, and seeing who needs you:

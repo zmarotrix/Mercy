@@ -489,14 +489,21 @@ function UF:UpdateHealth(b)
   self:UpdateColor(b)
 end
 
+---A health number on a FontString: in full (1339) unless "Short numbers" is on (1.3K). The value may be secret; the client
+---formats it without our reading it. If full formatting is refused, the short form stands in.
+local function writeNumber(fs, prefix, v)
+  if not M.db.shortNumbers and M.Set(fs, "SetFormattedText", prefix .. "%d", v) then return end
+  local ok, short = pcall(AbbreviateNumbers, v)
+  M.Set(fs, "SetFormattedText", prefix .. "%s", ok and short or v)
+end
+
 function UF:UpdateText(b)
   local unit, mode = b.unit, M.db.text
   if mode == "none" then b.value:SetText("") return end
   if mode == "current" then
     local ok, hp = pcall(UnitHealth, unit)
     if not ok then b.value:SetText("") return end
-    local okA, short = pcall(AbbreviateNumbers, hp)
-    M.Set(b.value, "SetFormattedText", "%s", okA and short or hp)
+    writeNumber(b.value, "", hp)
     b.value:SetAlpha(1)
     return
   end
@@ -508,8 +515,7 @@ function UF:UpdateText(b)
   end
   local ok, missing = pcall(UnitHealthMissing, unit, true)
   if not ok then b.value:SetText("") return end
-  local okA, short = pcall(AbbreviateNumbers, missing)
-  M.Set(b.value, "SetFormattedText", "-%s", okA and short or missing)
+  writeNumber(b.value, "-", missing)
   if not M.IsSecret(missing) then
     b.value:SetAlpha((missing or 0) > 0 and 1 or 0)
   elseif M.Curves.missingAlpha then
