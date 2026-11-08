@@ -511,10 +511,8 @@ Core:OnLogin(function()
   local list = UI.SettingsList(page)
   list:Header("Mercy")
   list:Buttons("Settings", "Mercy's own window: frames, click-casting, indicators and HealersMate.", { { "Open", function() M:OpenSettings() end } })
-  list:Toggle("Show the minimap button", "Mercy is also in the game's add-on menu and opens with /mercy.",
-    function() return Core.MinimapButton:IsShown("mercy") end, function(on) Core.MinimapButton:SetShown("mercy", on) end)
   page:SetScript("OnShow", function() list:Refresh() end)
-  M.settingsCategory = Core:AddSettingsPage(page, "Mercy")
+  M:AddSettingsPage(page)
 
   local function perf(label, tbl, method) Core:RegisterPerf("Mercy: " .. label, tbl, method, "mercy") end
   perf("frame update", M.UF, "Update")

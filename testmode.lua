@@ -85,7 +85,7 @@ function Test:Stop()
   end
   M.Groups:Layout()
   M.Groups:UpdateAll()
-  M:Print(M.db.locked and "Test mode off. The frames are locked: /mercy unlock (or right-click the minimap button) to move them."
+  M:Print(M.db.locked and "Test mode off. The frames are locked: /mercy unlock (or Shift-click the minimap button) to move them."
     or "Test mode off.")
 end
 

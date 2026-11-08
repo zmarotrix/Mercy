@@ -10,68 +10,60 @@
 local ADDON = ...
 local Core = NorgannonCore
 
-Mercy = Mercy or {}
-local M = Mercy
-M.addonName = ADDON or "Mercy"
-
-if not (Core and Core:Require(1, 17)) then
-  M.disabled = true
-  C_Timer.After(5, function()
-    print("|cffffeea0Mercy|r needs NorgannonDB Core 1.17 or newer; it is turned off.")
-  end)
+if not (Core and Core.NewAddon) then
+  Mercy = { disabled = true }
+  print("Mercy needs NorgannonDB Core 1.20 or newer; it is turned off.")
   return
 end
 
-M.PREFIX = "|cffffeea0Mercy|r"
-M.ACCENT = { 1, 0.933, 0.627 }
+Mercy = Mercy or {}
+local M = Mercy
+
+-- The suite's plumbing (Core:NewAddon): version check, the slash command, the minimap row and the add-on menu. Mercy has
+-- no main window: a click or right-click opens its settings window, and Shift-click locks or unlocks the frames.
+-- Its saved data stays its own (M:InitDB), because of the schema steps below.
+Core:NewAddon("mercy", {
+  folder = ADDON, api = { 1, 20 },
+  slash = { "/mercy" },
+  commands = {
+    binds = { function() M:OpenSettings("binds") end, "the click-casting tab" },
+    frames = { function() M:OpenSettings("frames") end, "the frames tab" },
+    indicators = { function() M:OpenSettings("indicators") end, "the indicators tab" },
+    healersmate = { function() M:OpenSettings("healersmate") end, "the HealersMate tab" },
+    lock = { function() M:SetLocked(true) M:Print("Frames locked.") end, "stop the groups being dragged" },
+    unlock = { function()
+      M:SetLocked(false, true)
+      M:Print("Every group's name is showing, empty ones too: drag one to move it. /mercy lock when you're done.")
+    end, "drag groups by their names" },
+    reset = { function() M.Groups:ResetPositions() end, "put the groups back" },
+    test = { function(rest) M.Test:Toggle(tonumber(rest)) end, "[5|10|20|40]: invented players, to place the frames" },
+    import = { function(rest)
+      if rest == "" then M.Import:FromHealersMate(true) else M.Import:FromString(rest) end
+    end, "[string]: binds from HealersMate, or from a string" },
+    status = { function() M:PrintStatus() end, "what the client allows here" },
+  },
+  minimap = {
+    onShiftClick = function()
+      M:SetLocked(not M.db.locked)
+      M:Print(M.db.locked and "Frames locked." or "Frames unlocked: drag a group by its name.")
+    end,
+    shiftHint = "lock or unlock",
+    status = function() return M.db and (M.db.locked and "Frames locked" or "Frames unlocked") end,
+  },
+})
+if M.disabled then return end
+
 M.GREEN = { 0.15, 0.85, 0.1 }   -- the health bar's green: a clear, warm green, not the blue-ish one 0.1.x had
-function M:Print(msg) Core:Print(msg, self.PREFIX) end
 M.IsSecret = Core.IsSecret
 
 -------------------------------------------------------------------------------------------
 -- Calling the client. Any call may be missing or refuse.
 -------------------------------------------------------------------------------------------
 
----ns.name, or the global name when ns is nil; nil if the client lacks it.
-function M.Fn(ns, name)
-  if not ns then
-    local fn = rawget(_G, name)
-    return type(fn) == "function" and fn or nil
-  end
-  local t = rawget(_G, ns)
-  local fn = type(t) == "table" and t[name]
-  return type(fn) == "function" and fn or nil
-end
-
----Calls a client function. Returns ok, ... with the values as they came, secrets included.
-function M.Try(fn, ...)
-  if type(fn) ~= "function" then return false end
-  return pcall(fn, ...)
-end
-
-local function clean(ok, ...)
-  if not ok then return nil end
-  local n = select("#", ...)
-  if n == 0 then return nil end
-  local out = { ... }
-  for i = 1, n do
-    if Core.IsSecret(out[i]) then out[i] = nil end
-  end
-  return unpack(out, 1, n)
-end
-
----The answer with every secret value turned into nil: for logic that must branch.
-function M.Plain(fn, ...)
-  if type(fn) ~= "function" then return nil end
-  return clean(pcall(fn, ...))
-end
-
----A widget method call that may get secret arguments; false if the client refused.
-function M.Set(obj, method, ...)
-  local fn = obj and obj[method]
-  if type(fn) ~= "function" then return false end
-  return (pcall(fn, obj, ...))
-end
+-- Core's helpers, under the names Mercy's files use: Fn finds a client function; Try calls it and returns ok, ... with
+-- secrets as they came; Plain turns secrets into nil, for logic that must branch; Set hands a widget values that may be
+-- secret, and is false if the client refused.
+M.Fn, M.Try, M.Plain, M.Set = Core.Fn, Core.Call, Core.Plain, Core.SetSecret
 
 function M.InCombat()
   return InCombatLockdown and InCombatLockdown() and true or false
@@ -232,11 +224,7 @@ function M:Changed(what)
   if self.Settings then self.Settings:Refresh() end
 end
 
-Core:On("ADDON_LOADED", M, function(_, name)
-  if name ~= M.addonName then return end
-  Core:Off("ADDON_LOADED", M)
-  M:InitDB()
-end)
+M:OnReady(function() M:InitDB() end)
 
 Core:OnLogin(function()
   if not M.db then return end
@@ -266,14 +254,10 @@ Core:On("SPELLS_CHANGED", M, function()
 end)
 
 -------------------------------------------------------------------------------------------
--- Commands, the minimap button and the suite
+-- Settings, locking and status
 -------------------------------------------------------------------------------------------
 
-Core:RegisterAddon("mercy", {
-  version = C_AddOns and C_AddOns.GetAddOnMetadata(M.addonName, "Version") or "0.1.0",
-  open = function() M:OpenSettings() end,
-})
-
+---Mercy's own settings window (it replaces NewAddon's, which opens the game's Settings page).
 function M:OpenSettings(tab)
   if self.Settings then self.Settings:Open(tab) end
 end
@@ -296,33 +280,6 @@ function M:SetLocked(locked, showAll)
   if self.Groups then self.Groups:UpdateMovers() end
 end
 
-SLASH_MERCY1 = "/mercy"
-SlashCmdList["MERCY"] = function(msg)
-  msg = strtrim(msg or "")
-  local lower = string.lower(msg)
-  local cmd, rest = lower:match("^(%S+)%s*(.-)$")
-  if lower == "" or lower == "settings" or lower == "options" then
-    M:OpenSettings()
-  elseif cmd == "binds" or cmd == "frames" or cmd == "indicators" or cmd == "healersmate" then
-    M:OpenSettings(cmd)
-  elseif lower == "lock" then
-    M:SetLocked(true) M:Print("Frames locked.")
-  elseif lower == "unlock" then
-    M:SetLocked(false, true) M:Print("Every group's name is showing, empty ones too: drag one to move it. /mercy lock when you're done.")
-  elseif lower == "reset" then
-    M.Groups:ResetPositions()
-  elseif cmd == "test" then
-    M.Test:Toggle(tonumber(rest))
-  elseif cmd == "import" then
-    local text = strtrim(msg:sub(8))
-    if text == "" then M.Import:FromHealersMate(true) else M.Import:FromString(text) end
-  elseif lower == "status" then
-    M:PrintStatus()
-  else
-    M:Print("/mercy opens settings. Also: test [5|10|20|40], lock, unlock, reset, import [string], status")
-  end
-end
-
 function M:PrintStatus()
   local a = self.Auras
   self:Print(("Highlight: %s. Blizzard's aura drawing on our frames: %s. Our dispel count: %s.")
@@ -331,27 +288,3 @@ function M:PrintStatus()
   self:Print(("You can remove: %s."):format(a:CuresText()))
   if self.InCombat() then self:Print("In combat: layout and bind changes wait for it to end.") end
 end
-
-local function onClick(button)
-  if button == "RightButton" then
-    M:SetLocked(not M.db.locked)
-    M:Print(M.db.locked and "Frames locked." or "Frames unlocked: drag a group by its name.")
-  else
-    M:OpenSettings()
-  end
-end
-local function tooltip(tt)
-  tt:AddLine("Mercy", M.ACCENT[1], M.ACCENT[2], M.ACCENT[3])
-  tt:AddLine("Healer frames", 1, 1, 1)
-  tt:AddLine("Click: settings  ·  Right-click: lock or unlock  ·  Drag: move", .43, .4, .32)
-end
-Core:OnLogin(function()
-  if M.db then Core.MinimapButton:Add("mercy", { onClick = onClick, tooltip = tooltip }) end
-end)
-function Mercy_OnAddonCompartmentClick(_, button) onClick(button) end
-function Mercy_OnAddonCompartmentEnter(_, frame)
-  GameTooltip:SetOwner(frame, "ANCHOR_LEFT")
-  tooltip(GameTooltip)
-  GameTooltip:Show()
-end
-function Mercy_OnAddonCompartmentLeave() GameTooltip:Hide() end

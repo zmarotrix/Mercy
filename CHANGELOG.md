@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0, 2026-11-07
+
+- Built on NorgannonDB Core 1.20's `Core:NewAddon` and its client calls. Same commands; `/mercy help` lists them.
+- The minimap row and the add-on menu now work like every suite add-on's: a click or a right-click opens Mercy's
+  settings. Locking and unlocking the frames moved to **Shift-click**, so a habit from another add-on can't unlock them.
+  The tooltip says whether the frames are locked.
+- The "Show the minimap button" setting is gone: NorgannonDB > Minimap pins any add-on.
+
 ## 0.2.18, 2026-11-07
 
 - "Same opacity for every group" (Frames tab, Panel opacity): one slider sets every group's panel opacity; turning it on gives them all the
