@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.13, 2026-11-07
+
+- **Fixed:** a pale bar could stay after the health fill when nobody was healing. Incoming heals and absorbs only redrew when the game
+  reported a change, and this client hides their amounts even out of combat, so a missed update stuck. They're read again twice a second.
+- Clear colours past the health fill: other people's incoming heals deep green, yours bright green, absorbs light blue. Grey is never one of them.
+
 ## 0.2.12, 2026-11-07
 
 - **In combat, the game's own dispel overlay takes over.** Tested in game (ApiProbe): in combat this client errors on every aura read

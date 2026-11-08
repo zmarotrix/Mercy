@@ -215,9 +215,10 @@ function UF:Create(parent, unit, name)
   if b.clip.SetClipsChildren then b.clip:SetClipsChildren(true) end
   b.health = statusbar(b.clip, M.GREEN[1], M.GREEN[2], M.GREEN[3], 1, ART.health)
   b.health:SetAllPoints(b.clip)
-  b.incAll = statusbar(b.clip, 0.45, 0.95, 0.5, 0.35, ART.health)
-  b.incMine = statusbar(b.clip, 0.65, 1, 0.7, 0.65, ART.health)
-  b.absorb = statusbar(b.clip, 0.85, 0.9, 1, 0.55, ART.health)
+  -- after the health: everyone's incoming heals (deep green), yours on top (bright green), then absorbs (light blue)
+  b.incAll = statusbar(b.clip, 0.1, 0.6, 0.15, 0.85, ART.health)
+  b.incMine = statusbar(b.clip, 0.45, 1, 0.35, 0.9, ART.health)
+  b.absorb = statusbar(b.clip, 0.45, 0.75, 1, 0.75, ART.health)
   -- the well behind the bar (what shows where health is missing), on the bar so the same mask rounds it
   b.bg = b.health:CreateTexture(nil, "BACKGROUND")
   b.bg:SetAllPoints(b.clip)
@@ -702,6 +703,9 @@ function UF:RegisterEvents()
   Core:On("RAID_TARGET_UPDATE", UF, function() for _, b in ipairs(UF.all) do UF:UpdateRaidIcon(b) end end)
   if C_Timer and C_Timer.NewTicker then
     C_Timer.NewTicker(0.25, function() for _, b in ipairs(UF.all) do if b:IsShown() then UF:UpdateRange(b) end end end)
+    -- heal predictions and absorbs are secret even out of combat, so Mercy can't check them: read them again twice a second, so
+    -- a missed "heal landed" update can't leave a stale bar behind
+    C_Timer.NewTicker(0.5, function() for _, b in ipairs(UF.all) do if b:IsShown() and not b.fake then UF:UpdatePrediction(b) end end end)
   end
 end
 
