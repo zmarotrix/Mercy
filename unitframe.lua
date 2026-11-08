@@ -267,6 +267,18 @@ function UF:Create(parent, unit, name)
   b.role = text:CreateTexture(nil, "OVERLAY")
   b.role:SetSize(11, 11)
   b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 3, -3)   -- until PlaceIcons puts it beside the name
+  -- a dark disc behind it, so the pale role art reads on a bright bar
+  b.roleBg = text:CreateTexture(nil, "ARTWORK")
+  b.roleBg:SetSize(16, 16)
+  b.roleBg:SetPoint("CENTER", b.role, "CENTER", 0, 0)
+  b.roleBg:SetColorTexture(0.04, 0.04, 0.05, 0.7)
+  local disc = text.CreateMaskTexture and text:CreateMaskTexture()
+  if disc then
+    disc:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    disc:SetAllPoints(b.roleBg)
+    if b.roleBg.AddMaskTexture then b.roleBg:AddMaskTexture(disc) end
+  end
+  b.roleBg:Hide()
   b.raidIcon = text:CreateTexture(nil, "OVERLAY")
   b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   b.raidIcon:SetSize(12, 12)
@@ -440,11 +452,11 @@ function UF:PlaceIcons(b)
   if plain then
     b.name:SetWidth(box)
     local half = math.floor(math.min(w, box) / 2 + 0.5)
-    b.role:SetPoint("RIGHT", b.name, "CENTER", -half - 2, 0)
+    b.role:SetPoint("RIGHT", b.name, "CENTER", -half - 5, 0)
     b.raidIcon:SetPoint("LEFT", b.name, "CENTER", half + 2, 0)
   else
     b.name:SetWidth(0)
-    b.role:SetPoint("RIGHT", b.name, "LEFT", -2, 0)
+    b.role:SetPoint("RIGHT", b.name, "LEFT", -5, 0)
     b.raidIcon:SetPoint("LEFT", b.name, "RIGHT", 2, 0)
   end
 end
@@ -591,6 +603,7 @@ function UF:UpdateRole(b)
   local atlas = role and ROLE_ATLAS[role]
   local tiny = b.layout and b.layout.h < 30
   if atlas and not tiny and b.role:SetAtlas(atlas) ~= false then b.role:Show() else b.role:Hide() end
+  b.roleBg:SetShown(b.role:IsShown())
 end
 
 function UF:UpdateRaidIcon(b)

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.7, 2026-11-08
+
+- Role icons sit on a small dark disc, so they read on the bright green bar.
+
 ## 0.3.6, 2026-11-08
 
 - Fixed an error placing the role icon when the game hides a name from add-ons (the Target frame): the icons now
