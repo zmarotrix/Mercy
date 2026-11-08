@@ -50,8 +50,12 @@ function Auras:Filter()
 end
 
 ---The highlight in use: Mercy's, unless its count can't be read and Blizzard's drawing works.
+---The highlight in use. In combat add-ons can't read auras at all on this client (ApiProbe, 2026-11-07: every aura reader errors
+---"Auras cannot be accessed when secret while tainted"), so Mercy's own highlight is out of combat only, and in combat Blizzard's
+---overlay, drawn by the game's own code on our frames, takes over. Likewise if the count can't be read for any other reason.
+local UNREADABLE = { secret = true, error = true, combat = true }
 function Auras:Effective()
-  if M.db.highlight == "mercy" and self.countState == "secret" and self.containerState == "working" then return "blizzard" end
+  if M.db.highlight == "mercy" and UNREADABLE[self.countState or ""] and self.containerState == "working" then return "blizzard" end
   return M.db.highlight
 end
 
@@ -63,6 +67,7 @@ end
 function Auras.Ids(unit, filter, max)
   local fn = M.Fn("C_UnitAuras", "GetUnitAuraInstanceIDs")
   if not fn then return nil, "missing" end
+  if M.InCombat() then return nil, "combat" end   -- it errors for add-ons in combat; don't ask
   local ok, ids = pcall(fn, unit, filter, max)
   if not ok then return nil, "error" end
   if M.IsSecret(ids) or type(ids) ~= "table" then return nil, "secret" end
@@ -280,6 +285,22 @@ function Auras:UpdateBuffIcons(b)
   end
   for i = n + 1, #icons do icons[i]:Hide() end
 end
+
+-- entering combat: Blizzard's overlay takes over now, not at the next aura change; leaving it: Mercy's own again
+Core:On("PLAYER_REGEN_DISABLED", Auras, function()
+  Auras.countState = "combat"
+  Auras:SettingsChanged()
+  if M.Groups and M.Groups.built then
+    for _, b in ipairs(M.Groups:Buttons()) do if b.highlight then b.highlight:Hide() end end
+  end
+end)
+Core:On("PLAYER_REGEN_ENABLED", Auras, function()
+  Auras.countState = nil
+  Core:NextFrame(function()
+    if M.Groups and M.Groups.built then M.Groups:UpdateAll() end
+    Auras:SettingsChanged()
+  end, "mercy-auras-after-combat")
+end)
 
 function Auras:UpdateUnit(b)
   self:UpdateHighlight(b)

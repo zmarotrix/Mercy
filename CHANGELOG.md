@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.12, 2026-11-07
+
+- **In combat, the game's own dispel overlay takes over.** Tested in game (ApiProbe): in combat this client errors on every aura read
+  from an add-on, including the instance-id list Mercy's own highlight used. So Mercy's border is now out of combat only, and on entering
+  combat Blizzard's overlay, drawn by the game's own code on our frames, switches on at once; it switches back when combat ends.
+- Mercy no longer asks for auras in combat at all (it only produced errors). "Dispel N" by the group's name counts out of combat only.
+
 ## 0.2.11, 2026-11-07
 
 - **Downranking buffs:** a buff rank can't go on anyone more than 10 levels below it ("Target is too low level"). The rebuff button, Buff
