@@ -142,7 +142,7 @@ local function makeHighlight(parent)
   return hl
 end
 
-local function makeDebuffIcon(b, i)
+local function makeDebuffIcon(b, i, buff)
   local f = CreateFrame("Frame", nil, b.content)
   f:SetFrameLevel(b.content:GetFrameLevel() + 6)
   if f.SetMouseClickEnabled then f:SetMouseClickEnabled(false) end   -- clicks fall through to the unit button
@@ -164,7 +164,8 @@ local function makeDebuffIcon(b, i)
   f:SetScript("OnEnter", function(self)
     if not self.auraID then return end
     GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
-    if not M.Set(GameTooltip, "SetUnitDebuffByAuraInstanceID", b.unit, self.auraID) then GameTooltip:Hide() return end
+    local method = buff and "SetUnitBuffByAuraInstanceID" or "SetUnitDebuffByAuraInstanceID"
+    if not M.Set(GameTooltip, method, b.unit, self.auraID) then GameTooltip:Hide() return end
     GameTooltip:Show()
   end)
   f:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -297,6 +298,8 @@ function UF:Create(parent, unit, name)
   b.container:SetFrameLevel(b.content:GetFrameLevel() + 4)
   b.debuffs = {}
   for i = 1, 5 do b.debuffs[i] = makeDebuffIcon(b, i) end
+  b.buffs = {}
+  for i = 1, 5 do b.buffs[i] = makeDebuffIcon(b, i, true) end
 
   b:SetScript("OnEnter", function(self) if M.Tooltip then M.Tooltip:Show(self) end end)
   b:SetScript("OnLeave", function(self) if M.Tooltip then M.Tooltip:Hide(self) end end)
@@ -352,10 +355,16 @@ function UF:ApplyLayout(b, key)
     b.status:SetPoint("RIGHT", b.clip, "RIGHT", -3, 0)
   end
   b.value:SetShown(twoLines)
+  -- debuffs bottom left, your buffs bottom right: where Blizzard's container puts them too (BuffsRightDebuffsLeft)
   for i, icon in ipairs(b.debuffs) do
     icon:SetSize(L.icon, L.icon)
     icon:ClearAllPoints()
-    icon:SetPoint("BOTTOMRIGHT", b.clip, "BOTTOMRIGHT", -2 - (i - 1) * (L.icon + 2), 2)
+    icon:SetPoint("BOTTOMLEFT", b.clip, "BOTTOMLEFT", 2 + (i - 1) * (L.icon + 2), 2)
+  end
+  for i, icon in ipairs(b.buffs) do
+    icon:SetSize(L.icon - 2, L.icon - 2)
+    icon:ClearAllPoints()
+    icon:SetPoint("BOTTOMRIGHT", b.clip, "BOTTOMRIGHT", -2 - (i - 1) * (L.icon), 2)
   end
 end
 
@@ -628,7 +637,8 @@ local function each(unit, fn)
 end
 
 local UNIT_EVENTS = {
-  UNIT_HEALTH = function(b) UF:UpdateHealth(b) end,
+  -- status first: a health change is often someone dying or coming back, and a stale "dead" would keep the bar empty
+  UNIT_HEALTH = function(b) UF:UpdateStatus(b) UF:UpdateHealth(b) UF:UpdatePrediction(b) end,
   UNIT_MAXHEALTH = function(b) UF:UpdateHealth(b) UF:UpdatePrediction(b) end,
   UNIT_HEAL_PREDICTION = function(b) UF:UpdatePrediction(b) end,
   UNIT_ABSORB_AMOUNT_CHANGED = function(b) UF:UpdatePrediction(b) end,
@@ -647,6 +657,10 @@ local UNIT_EVENTS = {
 function UF:RegisterEvents()
   for event, fn in pairs(UNIT_EVENTS) do
     Core:On(event, UF, function(_, unit) if unit then each(unit, fn) end end)
+  end
+  -- your own death and return: dying, releasing, being resurrected, reaching your body as a ghost
+  for _, event in ipairs({ "PLAYER_DEAD", "PLAYER_ALIVE", "PLAYER_UNGHOST" }) do
+    Core:On(event, UF, function() UF:UpdateUnitAll("player") end)
   end
   Core:On("UNIT_PET", UF, function() UF:UpdateUnitAll("pet") for i = 1, 4 do UF:UpdateUnitAll("partypet" .. i) end end)
   Core:On("PLAYER_TARGET_CHANGED", UF, function()

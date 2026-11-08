@@ -30,6 +30,8 @@ local function fake(i)
   f.far = i % 7 == 0
   f.dead = i % 11 == 0
   f.aggro = i == 1
+  -- your HoTs on a few of them
+  if i % 2 == 1 then f.buffs = { { icon = 135953 }, i % 4 == 1 and { icon = 135940 } or nil } end
   local types = { "Magic", "Curse", "Disease", "Poison", "none" }
   if i % 3 == 2 then
     local t = types[i % 5 + 1]

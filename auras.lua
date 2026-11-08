@@ -121,20 +121,22 @@ end
 function Auras:ContainerAttributes(b)
   local blizz = self:Effective() == "blizzard"
   local icons = M.db.debuffIcons and (M.db.maxDebuffs or 3) or 0
+  -- your buffs: Blizzard's rule (AuraUtil.ShouldDisplayBuff) is buffs you cast that you can put on others, not self-only ones
+  local buffs = M.db.myBuffs and (M.db.maxBuffs or 3) or 0
   local size = b.iconSize or 14
   local groups = rawget(_G, "CompactRaidGroupTypeEnum")
   return {
-    ["max-buffs"] = 0, ["max-debuffs"] = icons, ["max-dispel-debuffs"] = blizz and 3 or 0,
-    ["aura-organization-type"] = enum("RaidAuraOrganizationType", "BuffsTopDebuffsBottom", 1),
+    ["max-buffs"] = buffs, ["max-debuffs"] = icons, ["max-dispel-debuffs"] = blizz and 3 or 0,
+    ["aura-organization-type"] = enum("RaidAuraOrganizationType", "BuffsRightDebuffsLeft", 2),
     ["display-only-dispellable-debuffs"] = false,
-    ["ignore-buffs"] = true, ["ignore-debuffs"] = icons == 0, ["ignore-dispel-debuffs"] = false,
+    ["ignore-buffs"] = buffs == 0, ["ignore-debuffs"] = icons == 0, ["ignore-dispel-debuffs"] = false,
     ["dispel-indicator-option"] = blizz and (M.db.dispelScope == "any" and enum("RaidDispelDisplayType", "DisplayAll", 2)
       or enum("RaidDispelDisplayType", "DispellableByMe", 1)) or enum("RaidDispelDisplayType", "Disabled", 0),
     ["display-larger-role-specific-debuffs"] = true,
     ["dispel-indicator-overlay-type"] = enum("RaidDispelOverlayType", "UseDebuffColor", 1),
     ["dispel-indicator-overlay-animation"] = false, ["dispel-indicator-animated-border"] = false,
     ["show-big-defensive"] = false, ["big-defensive-size"] = size + 4,
-    ["debuff-size"] = size, ["buff-size"] = size, ["debuff-border-scale"] = 1, ["buff-border-scale"] = 1,
+    ["debuff-size"] = size, ["buff-size"] = size - 2, ["debuff-border-scale"] = 1, ["buff-border-scale"] = 1,
     ["always-hide-duration"] = true, ["set-aura-size-to-icon-size"] = true,
     ["power-bar-used-height"] = 0, ["group-type"] = groups and groups.Raid or nil,
   }
@@ -191,14 +193,18 @@ end
 -- Our own debuff icons: only when Blizzard's container isn't there, or in test mode
 -------------------------------------------------------------------------------------------
 
-local function setIcon(icon, unit, id)
+local function setIcon(icon, unit, id, buff)
   local U = C_UnitAuras
   local okD, data = pcall(U.GetAuraDataByAuraInstanceID, unit, id)
   if not okD or M.IsSecret(data) or type(data) ~= "table" then return false end
   M.Set(icon.texture, "SetTexture", data.icon)
   local okB, color = false, nil
-  if U.GetAuraDispelTypeColor and M.Curves.border then okB, color = pcall(U.GetAuraDispelTypeColor, unit, id, M.Curves.border) end
-  if okB and color and not M.IsSecret(color) and color.GetRGBA then
+  if buff then
+    icon.border:SetVertexColor(0, 0, 0, 1)
+  elseif U.GetAuraDispelTypeColor and M.Curves.border then okB, color = pcall(U.GetAuraDispelTypeColor, unit, id, M.Curves.border) end
+  if buff then
+    -- a black edge, set above
+  elseif okB and color and not M.IsSecret(color) and color.GetRGBA then
     M.Set(icon.border, "SetVertexColor", color:GetRGBA())
   else
     icon.border:SetVertexColor(0.8, 0, 0, 1)
@@ -238,6 +244,37 @@ function Auras:UpdateIcons(b)
       for _, id in ipairs(ids) do
         if n >= want then break end
         if setIcon(icons[n + 1], b.unit, id) then n = n + 1 end
+      end
+    end
+  end
+  for i = n + 1, #icons do icons[i]:Hide() end
+  self:UpdateBuffIcons(b)
+end
+
+---Your buffs on someone, drawn by Mercy only when Blizzard's container isn't there (it draws them otherwise), or in test mode.
+---HELPFUL|PLAYER: everything you cast on them, read as instance ids, which stay readable in combat.
+function Auras:UpdateBuffIcons(b)
+  local icons = b.buffs
+  if not icons then return end
+  local n = 0
+  local want = M.db.myBuffs and math.min(M.db.maxBuffs or 3, #icons) or 0
+  if b.fake then
+    for _, d in ipairs(b.fake.buffs or {}) do
+      if n >= want then break end
+      n = n + 1
+      local icon = icons[n]
+      icon.texture:SetTexture(d.icon)
+      icon.border:SetVertexColor(0, 0, 0, 1)
+      icon.count:SetText("")
+      icon.auraID = nil
+      icon:Show()
+    end
+  elseif want > 0 and not b.anchorID and UnitExists(b.unit) and not b.dead then
+    local ids = self.Ids(b.unit, "HELPFUL|PLAYER", want)
+    if ids then
+      for _, id in ipairs(ids) do
+        if n >= want then break end
+        if setIcon(icons[n + 1], b.unit, id, true) then n = n + 1 end
       end
     end
   end

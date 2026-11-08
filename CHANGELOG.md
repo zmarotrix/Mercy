@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.11, 2026-11-07
+
+- **Your buffs on people:** your HoTs and buffs on each person show bottom right, with their time, in combat too. Blizzard's own raid
+  frame code draws them (its rule: buffs you cast that you can put on others, not self-only ones); Mercy draws its own if the game
+  refuses. Debuff icons moved to bottom left. Settings: Your buffs, Most buff icons.
+- **Fixed:** after dying and coming back, your frame kept saying Ghost with an empty bar. A health change now checks whether someone is
+  dead first, and your own death, release and return redraw your frame.
+
 ## 0.1.10, 2026-11-07
 
 Easier to read:
