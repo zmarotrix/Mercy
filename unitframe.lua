@@ -207,8 +207,9 @@ function UF:Create(parent, unit, name)
   b.health = statusbar(b.clip, M.GREEN[1], M.GREEN[2], M.GREEN[3], 1, ART.health)
   b.health:SetAllPoints(b.clip)
   -- after the health: everyone's incoming heals (deep green), yours on top (bright green), then absorbs (light blue)
-  b.incAll = statusbar(b.clip, 0.1, 0.6, 0.15, 0.85, ART.health)
-  b.incMine = statusbar(b.clip, 0.45, 1, 0.35, 0.9, ART.health)
+  -- incoming heals in their own colours, not the health bar's green: everyone's a muted teal, yours a pale near-white
+  b.incAll = statusbar(b.clip, 0.2, 0.6, 0.58, 0.8, ART.health)
+  b.incMine = statusbar(b.clip, 0.8, 1, 0.9, 0.8, ART.health)
   b.absorb = statusbar(b.clip, 0.45, 0.75, 1, 0.75, ART.health)
   -- the well behind the bar (what shows where health is missing), on the bar so the same mask rounds it
   b.bg = b.health:CreateTexture(nil, "BACKGROUND")

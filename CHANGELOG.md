@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.5, 2026-11-08
+
+- Incoming heals stand apart from the green health bar: your own heals are a pale near-white, everyone else's a muted teal.
+
 ## 0.3.4, 2026-11-08
 
 - The role icon sits just left of the name and the raid mark just right of it, so the top-left corner is free.
