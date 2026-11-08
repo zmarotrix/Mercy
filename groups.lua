@@ -37,6 +37,8 @@ function Groups:Driver(key)
   if key == "raid" or key == "tanks" then return "[group:raid] show; hide" end
   if key == "party" then return M.db.soloParty and "[group:raid] hide; show" or "[group:raid] hide; [group:party] show; hide" end
   if key == "pets" then return "[group:raid] hide; [group:party] show; hide" end
+  -- a healer's target and focus frames are for people you heal: shown only for friendly units (the game decides, in combat too)
+  if M.db.friendlyOnly and (key == "target" or key == "focus") then return "[@" .. key .. ",help] show; hide" end
   return "show"
 end
 
@@ -335,8 +337,17 @@ function Groups:FitPanel(g)
       rows = math.max(rows, b.row + 1)
     end
   end
+  local empty = rows == 0
   cols, rows = math.max(cols, 1), math.max(rows, 1)
   g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28)
+  -- the panel and its name: only when someone's in it (unless you're moving the frames), at this group's opacity
+  local moving = not M.db.locked or (M.Test and M.Test.active)
+  local showPanel = M.db.panels and (moving or not empty or not M.db.hideEmpty)
+  local alpha = M:Group(g.key).alpha or 0.88
+  g.panel.fill:SetColor(UI.C.stone, alpha)
+  g.panel.line:SetColor(UI.C.lineStrong, math.min(0.9, alpha * 1.1))
+  g.panel:SetShown(showPanel and true or false)
+  g.label:SetShown((showPanel or moving) and true or false)
 end
 
 ---"Dispel 2  ·  Power Word: Fortitude 3": who needs you, counted per group.
@@ -374,9 +385,8 @@ end
 function Groups:UpdateMovers()
   local moving = not M.db.locked or (M.Test and M.Test.active)
   for _, g in pairs(self.frames) do
-    g.panel:SetShown(M.db.panels and true or false)
-    g.label:SetShown((M.db.panels or moving) and true or false)
     g.label:EnableMouse(moving and true or false)
+    self:FitPanel(g)
   end
 end
 

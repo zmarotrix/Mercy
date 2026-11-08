@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3, 2026-11-07
+
+- **Panel opacity** for each group (Frames tab): Party, Raid, Tanks, Pets, Target and Focus each have their own, down to none.
+- **Only when needed** (on by default): a group's panel shows only when someone's in it, and Target and Focus show only for friendly units
+  (the game decides, in combat too). No more empty Target and Focus boxes.
+- Frames start locked, so empty panels can hide; `/mercy unlock` or test mode still shows every label to drag. Older saves lock once.
+
 ## 0.2.2, 2026-11-07
 
 - Cleaner text on the bars. It sat on a half pixel (the middle of an odd-height bar), which blurred it, and its dark edge was drawn on

@@ -84,7 +84,7 @@ end
 M.GROUPS = { "party", "raid", "tanks", "pets", "target", "focus" }
 
 M.DEFAULTS = {
-  locked = false,
+  locked = true,                    -- /mercy unlock (or test mode) shows the labels to drag
   hideBlizzard = true,
   soloParty = true,                 -- party frames (you alone) when not in a group
   layout = "standard",              -- standard, compact, wide, tiny, classic
@@ -94,6 +94,8 @@ M.DEFAULTS = {
   color = "green",                  -- class, green, gradient
   nameColor = "class",              -- class or white
   panels = true,                    -- a rounded panel behind each group, with its name
+  hideEmpty = true,                 -- a group's panel shows only when someone's in it
+  friendlyOnly = true,              -- target and focus frames only for friendly units
   text = "current",                 -- current, missing, percent, none
   shortNumbers = false,             -- 1.3K instead of 1339
   power = "healers",                -- healers, all, none
@@ -160,6 +162,11 @@ function M:InitDB()
   if self.db.schema < 3 then
     if self.db.text == "missing" then self.db.text = "current" end
     self.db.schema = 3
+  end
+  -- 0.2.3: frames start locked, so empty panels can hide ("only when needed"); unlocked was only ever the default
+  if self.db.schema < 4 then
+    self.db.locked = true
+    self.db.schema = 4
   end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")
