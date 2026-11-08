@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.18, 2026-11-07
+
+- "Same opacity for every group" (Frames tab, Panel opacity): one slider sets every group's panel opacity; turning it on gives them all the
+  Party's. Off, each group keeps its own.
+
 ## 0.2.17, 2026-11-07
 
 - Setting descriptions wrap onto several lines instead of being cut off with "…": each is allowed several lines, and a tab's list is laid

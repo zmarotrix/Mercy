@@ -43,9 +43,12 @@ Settings.panes.frames = function(parent)
     function() return M.db.hideEmpty and M.db.friendlyOnly end,
     function(on) M.db.hideEmpty, M.db.friendlyOnly = on, on changed("layout") end)
   list:Header("Panel opacity")
+  list:Toggle("Same opacity for every group", "Moving any slider below moves them all. Turning this on gives every group the Party's.",
+    function() return M.db.syncAlpha end,
+    function(on) M.db.syncAlpha = on if on then M:SetPanelAlpha("party", M:Group("party").alpha or 0.88) end list:Refresh() end)
   for _, key in ipairs(M.GROUPS) do
     list:Slider(labels[key][1], nil, 0, 1, 0.05, function() return M:Group(key).alpha or 0.88 end,
-      function(v) M:Group(key).alpha = v M.Groups:UpdateMovers() end, "%.0f%%", 100)
+      function(v) M:SetPanelAlpha(key, v) if M.db.syncAlpha then list:Refresh() end end, "%.0f%%", 100)
   end
   list:Toggle("Party frames when you're alone", nil, opt("soloParty", "layout"))
   list:Toggle("Hide Blizzard's party and raid frames", "Turning this off takes a /reload.", function() return M.db.hideBlizzard end,

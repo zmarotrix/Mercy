@@ -95,6 +95,7 @@ M.DEFAULTS = {
   nameColor = "class",              -- class or white
   panels = true,                    -- a rounded panel behind each group, with its name
   hideEmpty = true,                 -- a group's panel shows only when someone's in it
+  syncAlpha = false,                -- one panel opacity for every group
   friendlyOnly = true,              -- target and focus frames only for friendly units
   text = "current",                 -- current, missing, percent, none
   shortNumbers = false,             -- 1.3K instead of 1339
@@ -279,6 +280,16 @@ end
 
 ---Lock (no dragging) or unlock. Unlocking with /mercy unlock also shows every group's name, empty ones too, until you lock again,
 ---so a Focus or Target with nobody in it can be found and moved.
+---A group's panel opacity, or every group's when "Same opacity for every group" is on.
+function M:SetPanelAlpha(key, alpha)
+  if self.db.syncAlpha then
+    for _, k in ipairs(self.GROUPS) do self:Group(k).alpha = alpha end
+  else
+    self:Group(key).alpha = alpha
+  end
+  if self.Groups then self.Groups:UpdateMovers() end
+end
+
 function M:SetLocked(locked, showAll)
   self.db.locked = locked and true or false
   self.showAll = (not locked and showAll) and true or false
