@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.16, 2026-11-07
+
+- Test mode is for placing frames: while it's on, every group with people in it shows its name and can be dragged, even with the frames
+  locked and panels off. Stopping it with the frames locked says how to unlock (/mercy unlock, or right-click the minimap button).
+
 ## 0.2.15, 2026-11-07
 
 - **Fixed:** empty Target and Focus groups showed their names in test mode (and with panels off). An empty group now shows nothing unless

@@ -63,7 +63,7 @@ local function makeLabel(g, key)
   label.text:SetText(Groups.DEFS[key].label)
   label:RegisterForDrag("LeftButton")
   label:SetScript("OnDragStart", function()
-    if M.InCombat() or M.db.locked then return end
+    if M.InCombat() or not Groups:CanDrag() then return end
     g:StartMoving()
   end)
   label:SetScript("OnDragStop", function()
@@ -357,7 +357,7 @@ function Groups:FitPanel(g)
   g.panel.line:SetColor(UI.C.lineStrong, math.min(0.9, alpha * 1.1))
   g.panel:SetShown(showPanel and true or false)
   -- the name: on its panel, or as the handle to drag the group by while the frames are unlocked; never for an empty group
-  local showLabel = showAll or showPanel or (not empty and not M.db.locked)
+  local showLabel = showAll or showPanel or (not empty and Groups:CanDrag())
   g.label:SetShown(showLabel and true or false)
 end
 
@@ -393,9 +393,14 @@ function Groups:FitPanelSoon(g)
   Core:NextFrame(function() self:FitPanel(g) end, "mercy-fit-" .. g.key)
 end
 
+---Can groups be dragged by their names now? When unlocked, and always in test mode, which is for placing the frames.
+function Groups:CanDrag()
+  return not M.db.locked or (M.Test and M.Test.active) or false
+end
+
 function Groups:UpdateMovers()
   for _, g in pairs(self.frames) do
-    g.label:EnableMouse(not M.db.locked)   -- drag a group by its name, unless the frames are locked
+    g.label:EnableMouse(Groups:CanDrag())   -- drag a group by its name, unless the frames are locked
     self:FitPanel(g)
   end
 end

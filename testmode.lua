@@ -85,7 +85,8 @@ function Test:Stop()
   end
   M.Groups:Layout()
   M.Groups:UpdateAll()
-  M:Print("Test mode off.")
+  M:Print(M.db.locked and "Test mode off. The frames are locked: /mercy unlock (or right-click the minimap button) to move them."
+    or "Test mode off.")
 end
 
 -- combat ends test mode: the frames need to show real people
