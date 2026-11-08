@@ -198,6 +198,7 @@ function Binds:Apply(button)
 end
 
 function Binds:ApplyAll()
+  if M.UF then M.UF.rangeSpell = nil end   -- binds changed: measure range with the new heal
   Core:AfterCombat(function()
     if not M.Groups then return end
     for _, button in ipairs(M.Groups:Buttons()) do self:Apply(button) end

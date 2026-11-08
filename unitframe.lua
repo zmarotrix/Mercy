@@ -27,6 +27,7 @@ UF.LAYOUT_NAMES = { { "standard", "Standard" }, { "compact", "Compact" }, { "wid
 -- The client's own modern raid frame art (CompactUnitFrame.xml): soft gradient fills, a rounded background, and rounded
 -- target and aggro frames. Plain textures stand in if a client lacks an atlas.
 local FLAT = "Interface\\Buttons\\WHITE8X8"
+local MEDIA = "Interface\\AddOns\\Mercy\\media\\"
 local ART = {
   health = "RaidFrame-Hp-Fill", healthBg = "raidframe-hp-bg-white",
   power = "_RaidFrame-Resource-Fill", powerBg = "_RaidFrame-Resource-Background",
@@ -153,10 +154,9 @@ function UF:Create(parent, unit, name)
   b.content = CreateFrame("Frame", nil, b)
   b.content:SetAllPoints()
   -- the game's soft raid frame background, dark: it's what shows where health is missing
-  b.bg = b.content:CreateTexture(nil, "BACKGROUND", nil, -7)
-  b.bg:SetAllPoints()
-  art(b.bg, ART.healthBg)
-  b.bg:SetVertexColor(0.13, 0.13, 0.15, 1)
+  -- a rounded dark card (the Core's 9-slice rounded box, so corners stay round at any size)
+  b.card = UI.Round(b.content, "BACKGROUND", -7, 5)
+  b.card:SetColor({ 0.07, 0.07, 0.08 }, 0.92)
 
   -- health, with incoming heals and absorbs drawn after its fill; the clip keeps them inside the bar
   b.clip = CreateFrame("Frame", nil, b.content)
@@ -166,6 +166,21 @@ function UF:Create(parent, unit, name)
   b.incAll = statusbar(b.clip, 0.45, 0.95, 0.5, 0.35, ART.health)
   b.incMine = statusbar(b.clip, 0.65, 1, 0.7, 0.65, ART.health)
   b.absorb = statusbar(b.clip, 0.85, 0.9, 1, 0.55, ART.health)
+  -- the well behind the bar (what shows where health is missing), on the bar so the same mask rounds it
+  b.bg = b.health:CreateTexture(nil, "BACKGROUND")
+  b.bg:SetAllPoints(b.clip)
+  art(b.bg, ART.healthBg)
+  b.bg:SetVertexColor(0.16, 0.16, 0.18, 1)
+  -- rounded corners: one mask per bar, the shape of the bar (media/mask-*.tga, made by tools/mercy_masks.py)
+  b.masks = {}
+  for _, s in ipairs({ b.health, b.incAll, b.incMine, b.absorb }) do
+    local m = s:CreateMaskTexture()
+    m:SetAllPoints(b.clip)
+    local fillTex = s:GetStatusBarTexture()
+    if fillTex and fillTex.AddMaskTexture then fillTex:AddMaskTexture(m) end
+    b.masks[#b.masks + 1] = m
+  end
+  if b.bg.AddMaskTexture then b.bg:AddMaskTexture(b.masks[1]) end
   local fill = b.health:GetStatusBarTexture() or b.health
   for _, s in ipairs({ b.incAll, b.incMine }) do
     s:SetPoint("TOPLEFT", fill, "TOPRIGHT")
@@ -175,10 +190,15 @@ function UF:Create(parent, unit, name)
   b.absorb:SetPoint("TOPLEFT", after, "TOPRIGHT")
   b.absorb:SetPoint("BOTTOMLEFT", after, "BOTTOMRIGHT")
 
-  b.powerBg = b.content:CreateTexture(nil, "BACKGROUND", nil, -6)
-  art(b.powerBg, ART.powerBg)
   b.power = statusbar(b.content, 0.3, 0.55, 1, 1, ART.power)
+  b.powerBg = b.power:CreateTexture(nil, "BACKGROUND")
   b.powerBg:SetAllPoints(b.power)
+  art(b.powerBg, ART.powerBg)
+  b.powerMask = b.power:CreateMaskTexture()
+  b.powerMask:SetAllPoints(b.power)
+  local powerFill = b.power:GetStatusBarTexture()
+  if powerFill and powerFill.AddMaskTexture then powerFill:AddMaskTexture(b.powerMask) end
+  if b.powerBg.AddMaskTexture then b.powerBg:AddMaskTexture(b.powerMask) end
 
   -- text in the middle, as HealersMate has it: the name, and missing health under it. A plain soft shadow, no outline.
   local text = CreateFrame("Frame", nil, b.content)
@@ -278,6 +298,9 @@ function UF:ApplyLayout(b, key)
   b.power:SetHeight(math.max(L.power, 1))
   b.power:SetShown(showPower)
   b.powerBg:SetShown(showPower)
+  local mask = MEDIA .. "mask-" .. key .. (showPower and "-p" or "-n")
+  for _, m in ipairs(b.masks) do m:SetTexture(mask, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") end
+  if showPower then b.powerMask:SetTexture(MEDIA .. "pmask-" .. key, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") end
   local barWidth = L.w - PAD * 2
   for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetWidth(barWidth) end
   -- the name and, under it, missing health or the status, centred on the bar
@@ -366,7 +389,9 @@ function UF:UpdateHealth(b)
     for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetMinMaxValues(0, 100) end
     b.incAll:SetValue(f.inc or 0) b.incMine:SetValue(f.incMine or 0) b.absorb:SetValue(f.absorb or 0)
     b.flash:SetAlpha(M.db.lowHealth and not f.dead and f.hp < 25 and 1 or 0)
-    if M.db.text == "none" or f.dead or f.hp >= 100 then b.value:SetText("")
+    if M.db.text == "none" or f.dead then b.value:SetText("")
+    elseif M.db.text == "current" then b.value:SetFormattedText("%d", f.hp * 45)
+    elseif f.hp >= 100 then b.value:SetText("")
     elseif M.db.text == "percent" then b.value:SetFormattedText("%d%%", f.hp)
     else b.value:SetFormattedText("-%d", (100 - f.hp) * 45) end
     b.value:SetAlpha(1)
@@ -398,6 +423,14 @@ end
 function UF:UpdateText(b)
   local unit, mode = b.unit, M.db.text
   if mode == "none" then b.value:SetText("") return end
+  if mode == "current" then
+    local ok, hp = pcall(UnitHealth, unit)
+    if not ok then b.value:SetText("") return end
+    local okA, short = pcall(AbbreviateNumbers, hp)
+    M.Set(b.value, "SetFormattedText", "%s", okA and short or hp)
+    b.value:SetAlpha(1)
+    return
+  end
   if mode == "percent" and M.Curves.percent then
     local ok, p = pcall(UnitHealthPercent, unit, true, M.Curves.percent)
     if ok then M.Set(b.value, "SetFormattedText", "%.0f%%", p) end
@@ -494,15 +527,37 @@ function UF:UpdateAggro(b)
   b.aggro:SetAlpha(status and status >= 2 and 1 or 0)
 end
 
+---A friendly spell you've bound and know, to measure range with (the first of Left, Right, Middle without modifiers).
+function UF:RangeSpell()
+  if self.rangeSpell ~= nil then return self.rangeSpell or nil end
+  self.rangeSpell = false
+  for _, mod in ipairs({ "none", "shift", "ctrl" }) do
+    for _, btn in ipairs({ "Left", "Right", "Middle" }) do
+      local a = M.Binds.Parse(M.Binds:Get("friendly", mod, btn))
+      if a and a.isSpell and M.Knows(a.spell) then self.rangeSpell = (a.spell:gsub("%s*%(.-%)%s*$", "")) return self.rangeSpell end
+    end
+  end
+  return nil
+end
+
 function UF:UpdateRange(b)
   if not M.db.range or b.fake or b.unit == "player" or b.unit == "target" or b.unit == "focus" then
     b.content:SetAlpha(b.fake and b.fake.far and M.db.range and M.db.rangeAlpha or 1)
     return
   end
-  local ok, inRange = pcall(UnitInRange, b.unit)
+  -- first: can one of your bound heals reach them? (IsSpellInRange isn't marked secret, and answers true, false or nil)
+  local spell = self:RangeSpell()
+  if spell then
+    local near = M.Plain(M.Fn("C_Spell", "IsSpellInRange"), spell, b.unit)
+    if near == true or near == false then b.content:SetAlpha(near and 1 or M.db.rangeAlpha) return end
+  end
+  -- then the group range check; "not checked" means the client couldn't tell, which isn't "out of range"
+  local ok, inRange, checked = pcall(UnitInRange, b.unit)
   if not ok then b.content:SetAlpha(1) return end
   if M.IsSecret(inRange) then
     if not M.Set(b.content, "SetAlphaFromBoolean", inRange, 1, M.db.rangeAlpha) then b.content:SetAlpha(1) end
+  elseif checked == false then
+    b.content:SetAlpha(1)
   else
     b.content:SetAlpha(inRange and 1 or M.db.rangeAlpha)
   end

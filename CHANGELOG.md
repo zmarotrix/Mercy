@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.7, 2026-11-07
+
+- **Rounded bars:** each layout ships masks the shape of its bars (`media/`, made by `tools/mercy_masks.py`), so health, incoming heals,
+  absorbs and the power strip have round corners at their real size. The frame sits on a rounded card.
+- **Current health** under the name, the new default (Text: Current, Missing, Percent or None). Saves that had the old default move to it once.
+- The group's name sits top left on its panel.
+- **Range:** frames next to you showed faded. Mercy now asks whether one of your bound heals can reach them first, and when the client
+  can't check range at all, treats them as in range instead of fading them.
+
 ## 0.1.6, 2026-11-07
 
 - The spells tooltip follows the keys you hold, as HealersMate's does: it shows the binds for Shift, Ctrl, Alt or none, every button

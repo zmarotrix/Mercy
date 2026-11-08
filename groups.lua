@@ -55,7 +55,7 @@ local function makeLabel(g, key)
   label:SetPoint("BOTTOMRIGHT", g, "TOPRIGHT", 0, 3)
   label.text = label:CreateFontString(nil, "OVERLAY")
   label.text:SetFontObject(UI.Font("title", 13))
-  label.text:SetPoint("CENTER", 0, 0)
+  label.text:SetPoint("LEFT", 2, 0)
   local c = UI.C.goldSoft
   label.text:SetTextColor(c[1], c[2], c[3])
   label.text:SetText(Groups.DEFS[key].label)

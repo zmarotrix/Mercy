@@ -94,7 +94,7 @@ M.DEFAULTS = {
   color = "green",                  -- class, green, gradient
   nameColor = "class",              -- class or white
   panels = true,                    -- a rounded panel behind each group, with its name
-  text = "missing",                 -- missing, percent, none
+  text = "current",                 -- current, missing, percent, none
   power = "healers",                -- healers, all, none
   range = true,
   rangeAlpha = 0.4,
@@ -148,6 +148,11 @@ function M:InitDB()
   if (self.db.schema or 1) < 2 then
     if self.db.color == "class" then self.db.color = "green" end
     self.db.schema = 2
+  end
+  -- 0.1.7: current health under the name became the default (missing health was only ever the default before)
+  if self.db.schema < 3 then
+    if self.db.text == "missing" then self.db.text = "current" end
+    self.db.schema = 3
   end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")
