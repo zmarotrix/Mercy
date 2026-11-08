@@ -60,13 +60,14 @@ local HALO_METHODS = { "SetText", "SetFormattedText", "SetFontObject", "SetWidth
 local function halo(fs)
   local parent = fs:GetParent()
   local copies = {}
-  for _, d in ipairs({ { 1, -1 }, { -1, -1 }, { 1, 1 }, { -1, 1 } }) do
+  -- straight up, down, left and right: an even 1 px edge (diagonals stacked with the shadow and read as doubled text)
+  for _, d in ipairs({ { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } }) do
     local c = parent:CreateFontString(nil, "ARTWORK")
     c:SetShadowOffset(0, 0)
     c:SetJustifyH("CENTER")
     if c.SetWordWrap then c:SetWordWrap(false) end
     c:SetPoint("CENTER", fs, "CENTER", d[1], d[2])
-    c:SetTextColor(0, 0, 0, 0.55)
+    c:SetTextColor(0, 0, 0, 0.7)
     copies[#copies + 1] = c
   end
   fs.halo = copies
@@ -268,7 +269,7 @@ function UF:Create(parent, unit, name)
   b.status:SetJustifyH("CENTER")
   b.status:SetTextColor(0.72, 0.72, 0.74)
   for _, fs in ipairs({ b.name, b.value, b.status }) do
-    if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) fs:SetShadowColor(0, 0, 0, 1) end
+    if fs.SetShadowOffset then fs:SetShadowOffset(0, 0) end   -- the halo is the edge; a shadow on top doubled it
     halo(fs)
   end
   b.role = text:CreateTexture(nil, "OVERLAY")
@@ -376,9 +377,11 @@ function UF:ApplyLayout(b, key)
   b.value:ClearAllPoints()
   b.status:ClearAllPoints()
   if twoLines then
-    b.name:SetPoint("BOTTOM", b.clip, "CENTER", 0, 0)
-    b.value:SetPoint("TOP", b.clip, "CENTER", 0, -1)
-    b.status:SetPoint("TOP", b.clip, "CENTER", 0, -1)
+    -- whole pixels from the bar's top: the middle of an odd-height bar is half a pixel, which blurs text
+    local mid = math.floor((L.h - PAD * 2 - (showPower and (L.power + 1) or 0)) / 2)
+    b.name:SetPoint("BOTTOM", b.clip, "TOP", 0, -mid)
+    b.value:SetPoint("TOP", b.clip, "TOP", 0, -mid - 1)
+    b.status:SetPoint("TOP", b.clip, "TOP", 0, -mid - 1)
   else
     b.name:SetPoint("CENTER", b.clip, "CENTER", 0, 0)
     b.value:SetPoint("RIGHT", b.clip, "RIGHT", -3, 0)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2, 2026-11-07
+
+- Cleaner text on the bars. It sat on a half pixel (the middle of an odd-height bar), which blurred it, and its dark edge was drawn on
+  the diagonals on top of a shadow, which read as doubled. The text now sits on whole pixels with an even 1 px edge and no shadow.
+
 ## 0.2.1, 2026-11-07
 
 - Health shows in full (1339, not 1.3K), current and missing alike, in combat too. "Short numbers" (Indicators) brings the short form back.
