@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4, 2026-11-08
+
+- The role icon sits just left of the name and the raid mark just right of it, so the top-left corner is free.
+- The game's dispel-type icons are back there: one per type someone has that you can remove, so two types show two.
+
 ## 0.3.3, 2026-11-08
 
 - The game's extra row of dispel-type icons is off: it sat under the role icon, top left. A dispellable debuff still

@@ -265,7 +265,7 @@ function UF:Create(parent, unit, name)
   end
   b.role = text:CreateTexture(nil, "OVERLAY")
   b.role:SetSize(11, 11)
-  b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 3, -3)
+  b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 3, -3)   -- until PlaceIcons puts it beside the name
   b.raidIcon = text:CreateTexture(nil, "OVERLAY")
   b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   b.raidIcon:SetSize(12, 12)
@@ -354,7 +354,8 @@ function UF:ApplyLayout(b, key)
   -- the name and, under it, missing health or the status, centred on the bar
   local twoLines = key ~= "tiny"
   b.name:SetFontObject(UI.Font("bold", L.font))
-  b.name:SetWidth(L.w - 10)
+  -- room either side of the name for the role icon and raid mark (PlaceIcons); the corners are the game's, for aura icons
+  b.name:SetWidth(L.w - 10 - (key ~= "tiny" and 28 or 0))
   b.value:SetFontObject(UI.Font("bold", L.font - 1))
   b.status:SetFontObject(UI.Font("body", L.font - 1))
   b.name:ClearAllPoints()
@@ -422,6 +423,21 @@ function UF:UpdateName(b)
   if b.fake then b.name:SetText(b.fake.name) return end
   local ok, name = pcall(UnitName, b.unit)
   if ok then M.Set(b.name, "SetText", name) end
+  self:PlaceIcons(b)
+end
+
+---The role icon just left of the name and the raid mark just right of it, where they can't sit under the game's aura icons.
+---Placed from the name's drawn width; if that can't be read (secret), they go by the edges of the name's box.
+function UF:PlaceIcons(b)
+  local box = b.name:GetWidth() or 0
+  local ok, w = pcall(b.name.GetStringWidth, b.name)
+  if not ok then w = nil end
+  if type(w) ~= "number" or (issecretvalue and issecretvalue(w)) or w > box then w = box end
+  local half = math.floor(w / 2 + 0.5)
+  b.role:ClearAllPoints()
+  b.role:SetPoint("RIGHT", b.name, "CENTER", -half - 2, 0)
+  b.raidIcon:ClearAllPoints()
+  b.raidIcon:SetPoint("LEFT", b.name, "CENTER", half + 2, 0)
 end
 
 function UF:UpdateColor(b)
