@@ -3,7 +3,7 @@
 ## Category: NorgannonDB
 ## Notes: Healer frames: party and raid frames you click to heal, with the debuffs you can remove lit up, in combat too. Powered by NorgannonDB. /mercy
 ## Author: Maro
-## Version: 0.2.8
+## Version: 0.2.9
 ## X-License: All Rights Reserved
 ## Dependencies: NorgannonDB, NorgannonDB_Core
 ## OptionalDeps: HealersMate, Clique

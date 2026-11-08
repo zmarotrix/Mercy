@@ -78,6 +78,22 @@ local function spellFromCursor()
   return type(info) == "table" and info.name or nil
 end
 
+-- every kind of bind, for the ? on the Click-casting tab (the README has the same table)
+Settings.BIND_HELP = {
+  { "Renew", "casts the spell on them (its best rank)" },
+  { "Heal(Rank 2)", "a particular rank" },
+  { "Buff", "the buff they're missing from you (Buffs tab)" },
+  { "Target", "makes them your target" },
+  { "Assist", "targets their target" },
+  { "Focus", "makes them your focus" },
+  { "Menu", "their right-click menu (or Context)" },
+  { "Follow", "follows them" },
+  { "Role", "a menu to mark their role" },
+  { "Role: Tank", "marks them Tank (also Healer, Damage, None)" },
+  { "Item: name", "uses that item on them" },
+  { "Macro: name", "runs one of your macros" },
+}
+
 Settings.panes.binds = function(parent)
   local pane = { set = "friendly", mod = "none", rows = {} }
   local top = CreateFrame("Frame", nil, parent)
@@ -89,7 +105,7 @@ Settings.panes.binds = function(parent)
   lead:SetPoint("TOPRIGHT", 0, 0)
   lead:SetWordWrap(true)
   lead:SetText("Each mouse button casts on the frame you click. Type a spell (Renew, or Heal(Rank 2)), Item: name, Macro: name, " ..
-    "Target, Assist, Focus, Context, Follow or Role, or drag a spell from your spellbook. Changes in combat apply when it ends.")
+    "Target, Buff, Menu and more (the ? lists them), or drag a spell from your spellbook. Changes in combat apply when it ends.")
   local sets = UI.Segmented(top, { { key = "friendly", label = "Friendly" }, { key = "hostile", label = "Hostile" } }, function(key)
     pane.set = key pane:Fill()
   end, 22)
@@ -100,6 +116,23 @@ Settings.panes.binds = function(parent)
   modDrop:SetPoint("LEFT", sets, "RIGHT", 14, 0)
   modDrop:SetWidth(170)
   modDrop:SetValue("none", true)
+  -- what you can type in a box, beyond a spell's name
+  local help = CreateFrame("Button", nil, top)
+  help:SetSize(22, 22)
+  help:SetPoint("LEFT", modDrop, "RIGHT", 10, 0)
+  help.ring = UI.Icon(help, "circle", 22, C.lineStrong)
+  help.ring:SetAllPoints()
+  help.text = UI.Text(help, "title", 14, C.goldSoft)
+  help.text:SetPoint("CENTER", 0, 1)
+  help.text:SetText("?")
+  help:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:AddLine("What a bind can be", 1, 1, 1)
+    for _, row in ipairs(Settings.BIND_HELP) do GameTooltip:AddDoubleLine(row[1], row[2], 1, 0.82, 0, 0.9, 0.9, 0.9) end
+    GameTooltip:AddLine("Capitals don't matter. Hover a frame to see what each button does on it.", 0.66, 0.63, 0.54, true)
+    GameTooltip:Show()
+  end)
+  help:SetScript("OnLeave", function() GameTooltip:Hide() end)
   for i, b in ipairs(M.Binds.BUTTONS) do
     local label = UI.Text(top, "body", 14, C.text)
     label:SetPoint("TOPLEFT", sets, "BOTTOMLEFT", 0, -16 - (i - 1) * 30)

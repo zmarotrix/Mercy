@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.9, 2026-11-07
+
+- **A "Buff" bind:** put `Buff` on any button, and a click casts the buff that person is missing from you (whatever the Buffs tab tracks;
+  Wisdom or Might for a paladin). Nothing happens if they need none. The spells tooltip shows what it will cast on each person. It's
+  worked out out of combat; in combat it keeps the last answer.
+- **What a bind can be:** a ? beside the modifier menu on the Click-casting tab lists every kind (spells, ranks, Buff, Target, Assist,
+  Focus, Menu, Follow, Role, Item:, Macro:), and the README has the same table.
+
 ## 0.2.8, 2026-11-07
 
 - Aggro is a thin rounded red line just outside the frame, instead of the game's thick aggro art that covered the mana bar. Your

@@ -181,7 +181,7 @@ function Buffs:Scan()
       for _, e in ipairs(active) do counts[e.key], needers[e.key] = 0, {} end
       local showBuffed = M.db.buffShow == "buffed"
       for _, b in ipairs(g.buttons) do
-        local marks = {}
+        local marks, want = {}, nil
         if b.fake then
           local e = active[1]
           if e and (b.fake.needBuff == not showBuffed) then marks[1] = { entry = e, state = showBuffed and "has" or "missing" } end
@@ -189,6 +189,7 @@ function Buffs:Scan()
           for _, e in ipairs(active) do
             local state = self:State(b, e)
             local needs = state == "missing" or state == "expiring"
+            if needs and e.known and not want then want = self:SpellFor(e, b) end
             if needs then
               counts[e.key] = counts[e.key] + 1
               table.insert(needers[e.key], b)
@@ -200,12 +201,27 @@ function Buffs:Scan()
           end
         end
         self:Mark(b, marks)
+        self:SetBuffSpell(b, (not b.fake and eligible(b)) and want or nil)
       end
       self.counts[key] = counts
       if key ~= "tanks" then self:SetButton(g, active, counts, needers) end
     end
   end
   if M.Groups.UpdateSummaries then M.Groups:UpdateSummaries() end
+end
+
+---The spell that gives this person this buff: the buff itself, or for a paladin Wisdom (mana users) or Might.
+function Buffs:SpellFor(e, b)
+  if not e.blessing then return e.name end
+  local wisdom, might = spellInfo(e.wisdom), spellInfo(e.might)
+  return (M.Plain(UnitPowerType, b.unit) == 0 and wisdom and M.Knows(wisdom)) and wisdom or might or wisdom
+end
+
+---What a "Buff" click on this frame casts. A change rewrites the frame's click attributes (we're out of combat here).
+function Buffs:SetBuffSpell(b, spell)
+  if b.buffSpell == spell then return end
+  b.buffSpell = spell
+  if not M.InCombat() and M.Binds:HasBuffBind() then M.Binds:Apply(b) end
 end
 
 function Buffs:ScanSoon()

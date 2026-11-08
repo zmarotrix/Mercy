@@ -44,6 +44,25 @@ frames. A bind can be a spell (`Renew`, or `Heal(Rank 2)`), `Item: name`, `Macro
 Follow or Role. Drag spells from your spellbook. A spell click on a dead player casts your resurrection. Hovering a frame lists your binds
 and how many casts your mana allows. Clique can bind Mercy's frames too.
 
+#### What a bind can be
+
+| Type in a box | What a click does |
+|---|---|
+| `Renew` | casts the spell on them, at its best rank |
+| `Heal(Rank 2)` | casts that rank |
+| `Buff` | casts the buff they're missing from you (the Buffs tab sets which); nothing if they need none |
+| `Target` | makes them your target |
+| `Assist` | targets their target |
+| `Focus` | makes them your focus |
+| `Menu` (or `Context`) | opens their right-click menu |
+| `Follow` | follows them |
+| `Role` | a menu to mark their role (Mercy uses it to sort and for the Tanks group) |
+| `Role: Tank`, `Role: Healer`, `Role: Damage`, `Role: None` | marks that role at once |
+| `Item: Major Healing Potion` | uses the item on them |
+| `Macro: My macro` | runs one of your macros |
+
+Capitals don't matter. An unbound left click targets and an unbound right click opens the menu. The ? on the Click-casting tab lists these too.
+
 ### From HealersMate
 If HealersMate is on, `/mercy import` brings its binds and main settings over and turns it off for that character. Its export strings
 work too: `/mercy import HM2|...`.

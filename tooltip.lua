@@ -52,7 +52,9 @@ function Tooltip:Show(b)
     for _, button in ipairs(M.Binds.BUTTONS) do
       local text = M.Binds:Get(set, mod, button.key)
       local action = M.Binds.Parse(text)
-      if action then
+      if action and action.buff then
+        tt:AddDoubleLine(button.label, "Buff: " .. (b.buffSpell or "nothing needed"), 1, 0.82, 0, 1, 1, 1)
+      elseif action then
         local right = text
         local cost = action.isSpell and manaCost(action.spell)
         if cost and cost > 0 and mana then

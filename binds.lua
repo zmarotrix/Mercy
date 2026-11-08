@@ -29,7 +29,7 @@ Binds.BUTTONS = {
   { key = "Button5", suffix = "5", click = "Button5", label = "Forward" },
 }
 Binds.SETS = { "friendly", "hostile" }
-Binds.SPECIAL = { "Target", "Assist", "Focus", "Context", "Follow", "Role", "Role: Tank", "Role: Healer", "Role: Damage", "Role: None" }
+Binds.SPECIAL = { "Target", "Assist", "Focus", "Context", "Follow", "Buff", "Role", "Role: Tank", "Role: Healer", "Role: Damage", "Role: None" }
 
 Binds.RES = { PRIEST = "Resurrection", PALADIN = "Redemption", SHAMAN = "Ancestral Spirit", DRUID = "Rebirth" }
 
@@ -111,6 +111,7 @@ function Binds.Parse(text)
   if lower == "focus" then return { type = "focus", label = "Focus" } end
   if lower == "context" or lower == "menu" then return { type = "togglemenu", label = "Menu" } end
   if lower == "follow" then return { type = "macro", follow = true, label = "Follow" } end
+  if lower == "buff" then return { type = "spell", buff = true, label = "Buff" } end
   if lower == "role" or lower == "set role" then return { role = "menu", label = "Role" } end
   local role = lower:match("^role:%s*(%a+)$")
   if role and ROLE[role] then return { role = ROLE[role], label = text } end
@@ -137,6 +138,10 @@ local SPECIAL_ICONS = {
 function Binds.Icon(text)
   local special = Binds.Parse(text)
   if special and not special.isSpell and not special.item and not special.macro then
+    if special.buff then
+      local first = M.Buffs and M.Buffs:Active()[1]
+      return first and first.icon or 136078, true, false
+    end
     local key = special.role and "role" or (special.follow and "follow") or special.type
     return SPECIAL_ICONS[key], true, key == "togglemenu"
   end
@@ -219,7 +224,7 @@ local function spellMacro(spell, unit, res, target)
 end
 
 ---The attributes for one button, as a table (also what the harness checks).
-function Binds:Attributes(unit)
+function Binds:Attributes(unit, button)
   local attrs = {
     ["*type1"] = "target", ["*type2"] = "togglemenu",                    -- an unbound click still does something sensible
     ["*type-hostile1"] = "target", ["*type-hostile2"] = "togglemenu",
@@ -234,7 +239,12 @@ function Binds:Attributes(unit)
         if a and a.type then
           local suffix = set == "friendly" and b.suffix or ("-hostile" .. b.suffix)
           local p = mod.prefix
-          if a.isSpell and set == "friendly" and (res or M.db.autoTarget) then
+          if a.buff then
+            -- the buff this person is missing from you, worked out out of combat (Buffs:Scan); nothing to do if they need none
+            local spell = button and button.buffSpell
+            attrs[p .. "type" .. suffix] = spell and "spell" or "noop"
+            attrs[p .. "spell" .. suffix] = spell
+          elseif a.isSpell and set == "friendly" and (res or M.db.autoTarget) then
             attrs[p .. "type" .. suffix] = "macro"
             attrs[p .. "macrotext" .. suffix] = spellMacro(a.spell, unit, res, M.db.autoTarget)
           elseif a.follow then
@@ -261,7 +271,7 @@ function Binds:Apply(button)
   if M.InCombat() then return false end
   local unit = button:GetAttribute("unit") or button.unit
   if not unit then return false end
-  local attrs = self:Attributes(unit)
+  local attrs = self:Attributes(unit, button)
   if button.mercyKeys then
     for key in pairs(button.mercyKeys) do
       if attrs[key] == nil then button:SetAttribute(key, nil) end
@@ -274,6 +284,17 @@ function Binds:Apply(button)
   end
   if button.RegisterForClicks then button:RegisterForClicks("AnyUp", "AnyDown") end
   return true
+end
+
+---Is "Buff" bound anywhere (so a frame's attributes need refreshing when its missing buff changes)?
+function Binds:HasBuffBind()
+  for _, mod in ipairs(self.MODS) do
+    for _, b in ipairs(self.BUTTONS) do
+      local a = self.Parse(self:Get("friendly", mod.key, b.key))
+      if a and a.buff then return true end
+    end
+  end
+  return false
 end
 
 function Binds:ApplyAll()
