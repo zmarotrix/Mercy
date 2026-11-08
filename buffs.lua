@@ -134,7 +134,8 @@ function Buffs:SetWho(e, who)
 end
 
 function Buffs:Reset()
-  self.active = nil
+  self.active, self.buffNames = nil, nil
+  if M.Binds then M.Binds:ForgetRanks() end
   self:ScanSoon()
 end
 
@@ -202,6 +203,14 @@ function Buffs:Scan()
         end
         self:Mark(b, marks)
         self:SetBuffSpell(b, (not b.fake and eligible(b)) and want or nil)
+        if eligible(b) then
+          local level = M.Plain(UnitLevel, b.unit)
+          if b.lastLevel ~= level then
+            local first = b.lastLevel == nil
+            b.lastLevel = level
+            if not first and M.db.downrank and not M.InCombat() then M.Binds:Apply(b) end
+          end
+        end
       end
       self.counts[key] = counts
       if key ~= "tanks" then self:SetButton(g, active, counts, needers) end
@@ -210,11 +219,29 @@ function Buffs:Scan()
   if M.Groups.UpdateSummaries then M.Groups:UpdateSummaries() end
 end
 
----The spell that gives this person this buff: the buff itself, or for a paladin Wisdom (mana users) or Might.
+---The spell that gives this person this buff: the buff itself, or for a paladin Wisdom (mana users) or Might, at a rank that
+---lands on their level.
 function Buffs:SpellFor(e, b)
-  if not e.blessing then return e.name end
-  local wisdom, might = spellInfo(e.wisdom), spellInfo(e.might)
-  return (M.Plain(UnitPowerType, b.unit) == 0 and wisdom and M.Knows(wisdom)) and wisdom or might or wisdom
+  local spell = e.name
+  if e.blessing then
+    local wisdom, might = spellInfo(e.wisdom), spellInfo(e.might)
+    spell = (M.Plain(UnitPowerType, b.unit) == 0 and wisdom and M.Knows(wisdom)) and wisdom or might or wisdom
+  end
+  return M.Binds:BestRank(spell, M.Plain(UnitLevel, b.unit))
+end
+
+---Is this one of the buffs Mercy knows (your class's, their party versions, blessings, the ones you added)? For downranking binds.
+function Buffs:IsBuff(spell)
+  if not self.buffNames then
+    local names = {}
+    for _, e in ipairs(self:All()) do
+      if e.name then names[e.name] = true end
+      if e.groupName then names[e.groupName] = true end
+      for _, n in ipairs(e.names or {}) do names[n] = true end
+    end
+    self.buffNames = names
+  end
+  return self.buffNames[spell] == true
 end
 
 ---What a "Buff" click on this frame casts. A change rewrites the frame's click attributes (we're out of combat here).
@@ -288,19 +315,21 @@ function Buffs:Next(active, counts, needers)
         end
         for _, members in pairs(bySub) do
           if #members >= GROUP_SIZE then
+            local low
             for _, b in ipairs(members) do
-              if inRange(e.groupName, b.unit) then return { spell = e.groupName, unit = b.unit, b = b, count = counts[e.key], entry = e, party = true } end
+              local level = M.Plain(UnitLevel, b.unit)
+              if type(level) == "number" and level > 0 and (not low or level < low) then low = level end
+            end
+            local groupSpell = M.Binds:BestRank(e.groupName, low)
+            for _, b in ipairs(members) do
+              if inRange(e.groupName, b.unit) then return { spell = groupSpell, unit = b.unit, b = b, count = counts[e.key], entry = e, party = true } end
             end
           end
         end
       end
       for _, b in ipairs(list) do
-        local spell = e.name
-        if e.blessing then
-          local wisdom, might = spellInfo(e.wisdom), spellInfo(e.might)
-          spell = (M.Plain(UnitPowerType, b.unit) == 0 and wisdom and M.Knows(wisdom)) and wisdom or might or wisdom
-        end
-        if spell and inRange(spell, b.unit) then return { spell = spell, unit = b.unit, b = b, count = counts[e.key], entry = e } end
+        local spell = self:SpellFor(e, b)
+        if spell and inRange(spell:gsub("%(.-%)$", ""), b.unit) then return { spell = spell, unit = b.unit, b = b, count = counts[e.key], entry = e } end
       end
     end
   end
@@ -400,5 +429,6 @@ Core:OnLogin(function()
   Core:On("PLAYER_REGEN_ENABLED", Buffs, function() Buffs:ScanSoon() end)
   Core:On("PLAYER_REGEN_DISABLED", Buffs, function() Buffs:HideAll() end)   -- still allowed to hide here: lockdown starts after
   Core:On("LEARNED_SPELL_IN_TAB", Buffs, function() Buffs:Reset() end)
+  Core:On("UNIT_LEVEL", Buffs, function() if not M.InCombat() then Buffs:ScanSoon() end end)
   if C_Timer and C_Timer.NewTicker then C_Timer.NewTicker(15, function() if not M.InCombat() then Buffs:Scan() end end) end
 end)

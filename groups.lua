@@ -115,7 +115,11 @@ function Groups:BuildGroup(key)
     local b = M.UF:Create(g, unit, "MercyUnit_" .. key .. i)
     b.group = key
     -- the panel follows who's there: it isn't protected, so it can resize in combat when the game shows or hides a frame
-    b:HookScript("OnShow", function() Groups:FitPanelSoon(g) end)
+    -- the game shows a frame when its unit appears, which can be after our last full redraw (at login most of all): draw it then
+    b:HookScript("OnShow", function(self)
+      Groups:FitPanelSoon(g)
+      Core:NextFrame(function() if self:IsShown() then M.UF:Update(self) end end, "mercy-show-" .. (self:GetName() or tostring(i)))
+    end)
     b:HookScript("OnHide", function() Groups:FitPanelSoon(g) end)
     g.buttons[i] = b
     self.buttons[#self.buttons + 1] = b

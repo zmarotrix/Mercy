@@ -113,6 +113,7 @@ M.DEFAULTS = {
   buffWho = {},                     -- [key] = "off", "all", "mana" or "tanks": who your class's buffs are for
   customBuffs = {},                 -- { { name, who } }: buffs you added yourself
   buffShow = "missing",             -- marks show what's "missing", or what they're "buffed" with
+  downrank = true,                  -- buffs on someone too low for your best rank go down to one that lands
   maxBuffs = 3,
   maxDebuffs = 3,
   aggro = true,
@@ -243,6 +244,10 @@ Core:OnLogin(function()
     M.Groups:Layout()
     M.Groups:HideBlizzard(M.db.hideBlizzard)
     M.Groups:UpdateAll()
+    -- the roster settles over the first seconds after login: sort and redraw again then
+    if C_Timer and C_Timer.After then
+      for _, delay in ipairs({ 2, 6 }) do C_Timer.After(delay, function() M.Groups:RosterChanged() end) end
+    end
   end, "mercy-start")
   if M.Import then M.Import:OnLogin() end
 end)

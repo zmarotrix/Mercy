@@ -322,6 +322,9 @@ Settings.panes.buffs = function(parent)
     opt("rebuffButton"))
   list:Slider("Rebuff when less than", nil, 1, 15, 1, function() return M.db.rebuffMinutes end,
     function(v) M.db.rebuffMinutes = v changed() end, "%.0f min", 1)
+  list:Toggle("Downrank buffs for low levels", "A buff rank can't go on anyone more than 10 levels below it (\"Target is too low level\"). "
+    .. "The rebuff button, Buff binds and buffs you've bound by name use the best rank that lands. A rank you typed is kept.",
+    opt("downrank", "binds"))
 
   list:Header("Tracked buffs")
   for _, e in ipairs(M.Buffs:All()) do

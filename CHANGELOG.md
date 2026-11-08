@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.11, 2026-11-07
+
+- **Downranking buffs:** a buff rank can't go on anyone more than 10 levels below it ("Target is too low level"). The rebuff button, Buff
+  binds and buffs bound by name now use the best rank that lands on each person (the party version goes by the lowest level in the
+  party), read from your spellbook and their level, and update when they level. A rank you typed yourself is kept. Setting: Buffs tab,
+  "Downrank buffs for low levels", on by default.
+- **Fixed:** at login some party members' frames stayed blank (no name, no health) until something about them changed. A frame is now
+  drawn the moment the game shows it, and the group is sorted and redrawn again 2 and 6 seconds after login.
+
 ## 0.2.10, 2026-11-07
 
 - Blizzard's party and raid frames are left alone by default; "Hide Blizzard's party and raid frames" (Frames tab) hides them. Saves that

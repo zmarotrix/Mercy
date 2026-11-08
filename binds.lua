@@ -189,6 +189,56 @@ function Binds:Spellbook(kind)
   return out
 end
 
+-------------------------------------------------------------------------------------------
+-- Ranks: a buff's rank must be at most 10 levels above its target ("Target is too low level"), so buffs on low levels go down a rank
+-------------------------------------------------------------------------------------------
+
+---Every rank of a spell in your spellbook: { { id, rank, level } } from lowest to highest, cached until your spells change.
+function Binds:Ranks(name)
+  self.rankCache = self.rankCache or {}
+  if self.rankCache[name] then return self.rankCache[name] end
+  local out = {}
+  local SB = rawget(_G, "C_SpellBook")
+  if SB and SB.GetNumSpellBookSkillLines and SB.GetSpellBookSkillLineInfo and SB.GetSpellBookItemInfo then
+    local bank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Player or 0
+    for line = 1, M.Plain(SB.GetNumSpellBookSkillLines) or 0 do
+      local info = M.Plain(SB.GetSpellBookSkillLineInfo, line)
+      if type(info) == "table" then
+        for slot = info.itemIndexOffset + 1, info.itemIndexOffset + info.numSpellBookItems do
+          local item = M.Plain(SB.GetSpellBookItemInfo, slot, bank)
+          if type(item) == "table" and item.name == name and item.spellID then
+            local sub = item.subName ~= "" and item.subName or M.Plain(M.Fn("C_Spell", "GetSpellSubtext"), item.spellID)
+            local rank = tonumber(type(sub) == "string" and sub:match("(%d+)") or "")
+            local level = M.Plain(M.Fn("C_Spell", "GetSpellLevelLearned"), item.spellID)
+            if rank then out[#out + 1] = { id = item.spellID, rank = rank, level = type(level) == "number" and level or 0 } end
+          end
+        end
+      end
+    end
+  end
+  table.sort(out, function(a, b) return a.rank < b.rank end)
+  self.rankCache[name] = out
+  return out
+end
+
+function Binds:ForgetRanks() self.rankCache = nil end
+
+---The spell to cast on someone of this level: "Name" when your best rank lands, else "Name(Rank N)" for the best that does.
+---A rank you typed yourself, an unknown level, or a spell with no ranks in the book is left as it is.
+function Binds:BestRank(spell, level)
+  if not (M.db.downrank and type(spell) == "string") or spell:find("%(") then return spell end
+  if type(level) ~= "number" or level <= 0 then return spell end
+  local ranks = self:Ranks(spell)
+  if #ranks < 2 then return spell end
+  local pick
+  for _, r in ipairs(ranks) do
+    if r.level <= level + 10 then pick = r end
+  end
+  pick = pick or ranks[1]
+  if pick == ranks[#ranks] then return spell end
+  return ("%s(Rank %d)"):format(spell, pick.rank)
+end
+
 ---The spells from Spellbook(kind) not bound to any button and modifier in that set, by name (any rank counts as bound).
 function Binds:Unbound(set)
   local bound = {}
@@ -238,6 +288,10 @@ function Binds:Attributes(unit, button)
         local a = self.Parse(self:Get(set, mod.key, b.key))
         if a and a.type then
           local suffix = set == "friendly" and b.suffix or ("-hostile" .. b.suffix)
+          -- a buff bound by name goes down a rank for someone too low for your best (worked out per frame, out of combat)
+          if a.isSpell and set == "friendly" and M.Buffs and M.Buffs:IsBuff(a.spell) then
+            a.spell = self:BestRank(a.spell, M.Plain(UnitLevel, unit))
+          end
           local p = mod.prefix
           if a.buff then
             -- the buff this person is missing from you, worked out out of combat (Buffs:Scan); nothing to do if they need none
