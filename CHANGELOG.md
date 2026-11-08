@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.9, 2026-11-08
+
+- The minimap list shows Mercy's role, "Healing frames", instead of whether the frames are locked.
+
 ## 0.3.8, 2026-11-08
 
 - The role icon moved to the middle of the frame's left edge, between the dispel-type and debuff icons.

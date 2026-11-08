@@ -48,7 +48,6 @@ Core:NewAddon("mercy", {
       M:Print(M.db.locked and "Frames locked." or "Frames unlocked: drag a group by its name.")
     end,
     shiftHint = "lock or unlock",
-    status = function() return M.db and (M.db.locked and "Frames locked" or "Frames unlocked") end,
   },
 })
 if M.disabled then return end
