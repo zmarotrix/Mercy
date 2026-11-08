@@ -5,7 +5,7 @@
 ## Author: Maro
 ## Version: 0.2.18
 ## X-License: All Rights Reserved
-## Dependencies: NorgannonDB, NorgannonDB_Core
+## Dependencies: NorgannonDB_Core
 ## OptionalDeps: HealersMate, Clique
 ## SavedVariables: MercyDB
 ## SavedVariablesPerCharacter: MercyCharDB
