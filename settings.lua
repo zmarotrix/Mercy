@@ -105,7 +105,7 @@ Settings.panes.binds = function(parent)
     label:SetWidth(90)
     label:SetText(b.label)
     local box = CreateFrame("EditBox", nil, top, "InputBoxTemplate")
-    box:SetSize(320, 22)
+    box:SetSize(290, 22)
     box:SetPoint("LEFT", label, "RIGHT", 10, 0)
     box:SetAutoFocus(false)
     box:SetFontObject(UI.Font("body", 13))
@@ -116,14 +116,27 @@ Settings.panes.binds = function(parent)
     box.icon:SetPoint("LEFT", box, "LEFT", 0, 0)
     box.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     box:SetScript("OnTextChanged", function(self)
-      local icon, ok = M.Binds.Icon(self:GetText())
-      if icon then self.icon:SetTexture(icon) self.icon:Show() else self.icon:Hide() end
+      local icon, ok, own = M.Binds.Icon(self:GetText())
+      if icon then
+        self.icon:SetTexture(icon)
+        if own then
+          self.icon:SetTexCoord(0, 1, 0, 1)
+          self.icon:SetVertexColor(C.goldSoft[1], C.goldSoft[2], C.goldSoft[3])
+        else
+          self.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+          self.icon:SetVertexColor(1, 1, 1)
+        end
+        self.icon:Show()
+      else
+        self.icon:Hide()
+      end
       if ok then self:SetTextColor(1, 1, 1) else self:SetTextColor(1, 0.55, 0.5) end
     end)
     local function save(self)
       local text = self:GetText()
       if text ~= (M.Binds:Get(pane.set, pane.mod, b.key) or "") then
         M.Binds:Set(pane.set, pane.mod, b.key, text)
+        if pane.FillShelf then pane:FillShelf() end
         if M.InCombat() then M:Print("Saved. It works once combat ends.") end
       end
     end
@@ -137,9 +150,82 @@ Settings.panes.binds = function(parent)
     box:HookScript("OnMouseUp", function(self) if GetCursorInfo() then self:GetScript("OnReceiveDrag")(self) end end)
     pane.rows[i] = box
   end
+  -- beside the boxes: your spells that aren't bound yet. Drag one onto a box, or click it to fill the first empty box.
+  local SHELF_COLS, SHELF_SIZE, SHELF_GAP, SHELF_MAX = 6, 28, 4, 18
+  local shelf = CreateFrame("Frame", nil, top)
+  shelf:SetPoint("TOPLEFT", pane.rows[1], "TOPRIGHT", 18, 0)
+  shelf:SetSize(SHELF_COLS * (SHELF_SIZE + SHELF_GAP), 140)
+  shelf.title = UI.Text(shelf, "title", 13, C.goldSoft)
+  shelf.title:SetPoint("BOTTOMLEFT", shelf, "TOPLEFT", 0, 4)
+  shelf.title:SetText("Not bound yet")
+  shelf.empty = UI.Text(shelf, "body", 12, C.muted)
+  shelf.empty:SetPoint("TOPLEFT", 0, -2)
+  shelf.empty:SetWidth(SHELF_COLS * (SHELF_SIZE + SHELF_GAP) - SHELF_GAP)
+  shelf.empty:SetWordWrap(true)
+  shelf.more = UI.Text(shelf, "body", 11, C.faint)
+  shelf.buttons = {}
+  local function firstEmpty()
+    for _, b in ipairs(M.Binds.BUTTONS) do
+      if not M.Binds:Get(pane.set, pane.mod, b.key) then return b.key end
+    end
+  end
+  local function shelfButton(i)
+    local s = CreateFrame("Button", nil, shelf)
+    s:SetSize(SHELF_SIZE, SHELF_SIZE)
+    s:SetPoint("TOPLEFT", ((i - 1) % SHELF_COLS) * (SHELF_SIZE + SHELF_GAP), -math.floor((i - 1) / SHELF_COLS) * (SHELF_SIZE + SHELF_GAP))
+    s.edge = s:CreateTexture(nil, "BACKGROUND")
+    s.edge:SetAllPoints()
+    s.edge:SetColorTexture(0, 0, 0, 1)
+    s.icon = s:CreateTexture(nil, "ARTWORK")
+    s.icon:SetPoint("TOPLEFT", 1, -1)
+    s.icon:SetPoint("BOTTOMRIGHT", -1, 1)
+    s.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    s.glow = s:CreateTexture(nil, "HIGHLIGHT")
+    s.glow:SetAllPoints(s.icon)
+    s.glow:SetColorTexture(1, 1, 1, 0.18)
+    s:RegisterForDrag("LeftButton")
+    s:SetScript("OnDragStart", function(self)
+      local pick = M.Fn("C_Spell", "PickupSpell") or M.Fn(nil, "PickupSpell")
+      if pick and self.spell then pcall(pick, self.spell.id) end
+    end)
+    s:SetScript("OnClick", function(self)
+      local key = firstEmpty()
+      if not (key and self.spell) then M:Print("Every button is bound for this modifier: drag the spell onto the one to replace.") return end
+      M.Binds:Set(pane.set, pane.mod, key, self.spell.name)
+      pane:Fill()
+    end)
+    s:SetScript("OnEnter", function(self)
+      if not self.spell then return end
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      if not M.Set(GameTooltip, "SetSpellByID", self.spell.id) then GameTooltip:AddLine(self.spell.name, 1, 1, 1) end
+      GameTooltip:AddLine("Drag onto a box, or click to put it in the first empty one.", M.ACCENT[1], M.ACCENT[2], M.ACCENT[3], true)
+      GameTooltip:Show()
+    end)
+    s:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    shelf.buttons[i] = s
+    return s
+  end
+  function pane:FillShelf()
+    local list = M.Binds:Unbound(self.set)
+    for i = 1, math.max(#shelf.buttons, math.min(#list, SHELF_MAX)) do
+      local spell = list[i]
+      local s = shelf.buttons[i] or (spell and i <= SHELF_MAX and shelfButton(i))
+      if s then
+        s.spell = i <= SHELF_MAX and spell or nil
+        if s.spell then s.icon:SetTexture(spell.icon) s:Show() else s:Hide() end
+      end
+    end
+    shelf.empty:SetText(#list == 0 and (self.set == "hostile" and "Every harmful spell you know is bound." or "Every healing and helpful spell you know is bound.") or "")
+    local extra = #list - SHELF_MAX
+    shelf.more:ClearAllPoints()
+    shelf.more:SetPoint("TOPLEFT", 0, -math.ceil(SHELF_MAX / SHELF_COLS) * (SHELF_SIZE + SHELF_GAP))
+    shelf.more:SetText(extra > 0 and ("and " .. extra .. " more") or "")
+  end
+
   function pane:Fill()
     sets:Select(self.set, true)
     for i, b in ipairs(M.Binds.BUTTONS) do self.rows[i]:SetText(M.Binds:Get(self.set, self.mod, b.key) or "") end
+    self:FillShelf()
   end
 
   local holder = CreateFrame("Frame", nil, parent)

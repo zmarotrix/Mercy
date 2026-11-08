@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4, 2026-11-07
+
+- **Not bound yet:** beside the click-casting boxes, your spells that aren't bound to anything. On Friendly, every healing and helpful
+  spell in your spellbook; on Hostile, your harmful ones. Drag one onto a box, or click it to fill the first empty box. They come from
+  your own spellbook (the client says which are helpful), so every class, rank and language works without a list to keep up.
+- Special binds have icons: a crosshair for Target, the suite's gear for Menu, and game icons for Assist, Focus, Follow and Role.
+
 ## 0.2.3, 2026-11-07
 
 - **Panel opacity** for each group (Frames tab): Party, Raid, Tanks, Pets, Target and Focus each have their own, down to none.

@@ -121,9 +121,25 @@ function Binds.Parse(text)
   return { type = "spell", spell = text, label = text, isSpell = true }
 end
 
----What a bind's text looks like: its icon (nil if none), and whether it matches something you have.
----Spells come from your spellbook, items by name, macros from your macro list; Target, Context and the like have no icon.
+-- icons for the binds that aren't spells: the gear is the suite's own (drawn uncropped and tinted), the rest are game icons
+local SPECIAL_ICONS = {
+  target = "Interface\\Icons\\Ability_Hunter_SniperShot",
+  assist = "Interface\\Icons\\Ability_Hunter_MarkedForDeath",
+  focus = "Interface\\Icons\\Ability_TownWatch",
+  togglemenu = "Interface\\AddOns\\NorgannonDB_Core\\media\\ui\\gear",
+  follow = "Interface\\Icons\\Ability_Rogue_Sprint",
+  role = "Interface\\Icons\\INV_Misc_GroupLooking",
+}
+
+---What a bind's text looks like: its icon (nil if none), whether it matches something you have, and whether the icon is one of
+---the suite's own (drawn whole and tinted, not cropped like a spell icon). Spells come from your spellbook, items by name, macros
+---from your macro list.
 function Binds.Icon(text)
+  local special = Binds.Parse(text)
+  if special and not special.isSpell and not special.item and not special.macro then
+    local key = special.role and "role" or (special.follow and "follow") or special.type
+    return SPECIAL_ICONS[key], true, key == "togglemenu"
+  end
   local a = Binds.Parse(text)
   if not a then return nil, true end
   if a.isSpell then
@@ -140,6 +156,48 @@ function Binds.Icon(text)
     return icon, name ~= nil
   end
   return nil, true
+end
+
+---Your spells from the spellbook that can go on a friend ("helpful") or an enemy ("harmful"): { { id, name, icon } }, one per name
+---(ranks share a name), in spellbook order. Passive and future spells are left out.
+function Binds:Spellbook(kind)
+  local SB = rawget(_G, "C_SpellBook")
+  if not (SB and SB.GetNumSpellBookSkillLines and SB.GetSpellBookSkillLineInfo and SB.GetSpellBookItemInfo) then return {} end
+  local test = M.Fn("C_Spell", kind == "harmful" and "IsSpellHarmful" or "IsSpellHelpful")
+  if not test then return {} end
+  local bank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Player or 0
+  local spellType = Enum and Enum.SpellBookItemType and Enum.SpellBookItemType.Spell or 1
+  local out, seen = {}, {}
+  for line = 1, M.Plain(SB.GetNumSpellBookSkillLines) or 0 do
+    local info = M.Plain(SB.GetSpellBookSkillLineInfo, line)
+    if type(info) == "table" and not info.shouldHide and not info.offSpecID then
+      for slot = info.itemIndexOffset + 1, info.itemIndexOffset + info.numSpellBookItems do
+        local item = M.Plain(SB.GetSpellBookItemInfo, slot, bank)
+        if type(item) == "table" and item.itemType == spellType and not item.isPassive and item.spellID and item.name
+          and not seen[item.name] and M.Plain(test, item.spellID) == true then
+          seen[item.name] = true
+          out[#out + 1] = { id = item.spellID, name = item.name, icon = item.iconID }
+        end
+      end
+    end
+  end
+  return out
+end
+
+---The spells from Spellbook(kind) not bound to any button and modifier in that set, by name (any rank counts as bound).
+function Binds:Unbound(set)
+  local bound = {}
+  for _, mod in ipairs(self.MODS) do
+    for _, b in ipairs(self.BUTTONS) do
+      local a = self.Parse(self:Get(set, mod.key, b.key))
+      if a and a.isSpell then bound[(a.spell:gsub("%s*%(.-%)%s*$", ""))] = true end
+    end
+  end
+  local out = {}
+  for _, s in ipairs(self:Spellbook(set == "hostile" and "harmful" or "helpful")) do
+    if not bound[s.name] then out[#out + 1] = s end
+  end
+  return out
 end
 
 ---The resurrection spell you know, or nil.
