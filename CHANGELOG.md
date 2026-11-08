@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.10, 2026-11-07
+
+Easier to read:
+- Frames are about 10% larger in every layout (Standard is 132 x 52), with text a size up.
+- Health under the name is in the bold font and full white.
+- Names, health and status have a soft dark halo (four faint copies a pixel out) on top of the shadow, so they read on any bar
+  colour without an outline's hard edge. The halo follows every write, secret values included.
+
 ## 0.1.9, 2026-11-07
 
 - A group's panel fits the people in it: alone it wraps just your frame, and it grows and shrinks as people join and leave, in combat

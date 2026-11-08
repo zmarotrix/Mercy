@@ -16,11 +16,11 @@ UF.all = {}
 UF.byUnit = {}
 
 UF.LAYOUTS = {
-  standard = { w = 120, h = 46, power = 4, font = 12, icon = 14 },
-  compact = { w = 96, h = 40, power = 3, font = 11, icon = 12 },
-  wide = { w = 170, h = 42, power = 4, font = 13, icon = 16 },
-  tiny = { w = 72, h = 26, power = 0, font = 10, icon = 10 },
-  classic = { w = 140, h = 40, power = 7, font = 12, icon = 14 },
+  standard = { w = 132, h = 52, power = 4, font = 13, icon = 15 },
+  compact = { w = 106, h = 44, power = 3, font = 12, icon = 13 },
+  wide = { w = 184, h = 48, power = 4, font = 14, icon = 17 },
+  tiny = { w = 80, h = 28, power = 0, font = 11, icon = 11 },
+  classic = { w = 152, h = 46, power = 7, font = 13, icon = 15 },
 }
 UF.LAYOUT_NAMES = { { "standard", "Standard" }, { "compact", "Compact" }, { "wide", "Wide" }, { "tiny", "Tiny" }, { "classic", "Classic" } }
 
@@ -52,6 +52,35 @@ local HEALER_CLASSES = { PRIEST = true, DRUID = true, PALADIN = true, SHAMAN = t
 -------------------------------------------------------------------------------------------
 -- Building
 -------------------------------------------------------------------------------------------
+
+---A soft dark halo behind a FontString: four faint copies a pixel out on the diagonals. Every write to the text (SetText,
+---SetFormattedText, secret values included), its font, width, alpha and visibility goes to the copies too, so it can't drift.
+---Readable on any bar colour without the hard look of an outline font.
+local HALO_METHODS = { "SetText", "SetFormattedText", "SetFontObject", "SetWidth", "SetShown", "Show", "Hide", "SetAlpha" }
+local function halo(fs)
+  local parent = fs:GetParent()
+  local copies = {}
+  for _, d in ipairs({ { 1, -1 }, { -1, -1 }, { 1, 1 }, { -1, 1 } }) do
+    local c = parent:CreateFontString(nil, "ARTWORK")
+    c:SetShadowOffset(0, 0)
+    c:SetJustifyH("CENTER")
+    if c.SetWordWrap then c:SetWordWrap(false) end
+    c:SetPoint("CENTER", fs, "CENTER", d[1], d[2])
+    c:SetTextColor(0, 0, 0, 0.55)
+    copies[#copies + 1] = c
+  end
+  fs.halo = copies
+  for _, method in ipairs(HALO_METHODS) do
+    local original = fs[method]
+    fs[method] = function(self, ...)
+      original(self, ...)
+      for _, c in ipairs(copies) do
+        local fn = c[method]
+        if fn then pcall(fn, c, ...) end
+      end
+    end
+  end
+end
 
 local function statusbar(parent, r, g, b, a, atlas)
   local s = CreateFrame("StatusBar", nil, parent)
@@ -209,12 +238,13 @@ function UF:Create(parent, unit, name)
   if b.name.SetWordWrap then b.name:SetWordWrap(false) end
   b.value = text:CreateFontString(nil, "OVERLAY")
   b.value:SetJustifyH("CENTER")
-  b.value:SetTextColor(1, 1, 1, 0.9)
+  b.value:SetTextColor(1, 1, 1, 1)
   b.status = text:CreateFontString(nil, "OVERLAY")
   b.status:SetJustifyH("CENTER")
   b.status:SetTextColor(0.72, 0.72, 0.74)
   for _, fs in ipairs({ b.name, b.value, b.status }) do
-    if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) fs:SetShadowColor(0, 0, 0, 0.9) end
+    if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) fs:SetShadowColor(0, 0, 0, 1) end
+    halo(fs)
   end
   b.role = text:CreateTexture(nil, "OVERLAY")
   b.role:SetSize(11, 11)
@@ -307,7 +337,7 @@ function UF:ApplyLayout(b, key)
   local twoLines = key ~= "tiny"
   b.name:SetFontObject(UI.Font("bold", L.font))
   b.name:SetWidth(L.w - 10)
-  b.value:SetFontObject(UI.Font("body", L.font - 1))
+  b.value:SetFontObject(UI.Font("bold", L.font - 1))
   b.status:SetFontObject(UI.Font("body", L.font - 1))
   b.name:ClearAllPoints()
   b.value:ClearAllPoints()
