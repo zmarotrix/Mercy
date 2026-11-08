@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.6, 2026-11-07
+
+- The rebuff button stays put: when nobody needs a buff it's greyed with "0" and a click does nothing; in combat it greys the same way
+  (the game freezes it then) and comes back live after. It shows the count of people who need a buff. "Rebuff button" on the Buffs tab
+  still turns it off altogether.
+
 ## 0.2.5, 2026-11-07
 
 - **A Buffs tab:** each tracked buff can be for Everyone, Mana users, Tanks or Off; add any other buff by typing its name or dragging it

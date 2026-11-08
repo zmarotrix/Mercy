@@ -233,7 +233,11 @@ function Buffs:HideAll()
   if not M.Groups then return end
   for _, b in ipairs(M.Groups:Buttons()) do self:Mark(b, nil) end
   for _, g in pairs(M.Groups.frames) do
-    if g.rebuff and not M.InCombat() then g.rebuff:Hide() end
+    local btn = g.rebuff
+    if btn and not M.InCombat() then
+      -- reminders off or no button wanted: gone. Otherwise (combat is starting): stays, greyed, and does nothing until it ends
+      if not (M.db.buffReminders and M.db.rebuffButton) then btn:Hide() else self:Dim(btn, "combat") end
+    end
   end
   self.counts = {}
   if M.Groups.UpdateSummaries then M.Groups:UpdateSummaries() end
@@ -300,8 +304,13 @@ function Buffs:Button(g)
   btn.count:SetPoint("BOTTOMRIGHT", 3, -2)
   btn:SetScript("OnEnter", function(self)
     local n = self.next
-    if not n then return end
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
+    if not n then
+      GameTooltip:AddLine("Rebuff", 1, 1, 1)
+      GameTooltip:AddLine(self.why == "combat" and "Waits for combat to end." or "Everyone has your buffs.", 0.66, 0.63, 0.54)
+      GameTooltip:Show()
+      return
+    end
     GameTooltip:AddLine(n.spell, 1, 1, 1)
     local who = M.Plain(UnitName, n.unit) or n.unit
     GameTooltip:AddLine(n.party and ("Click: on " .. who .. "'s party") or ("Click: on " .. who), M.ACCENT[1], M.ACCENT[2], M.ACCENT[3])
@@ -317,14 +326,27 @@ function Buffs:Button(g)
   return btn
 end
 
+---The button with nothing to do: greyed, "0" (or blank in combat), and a click does nothing. Out of combat only (it's secure).
+function Buffs:Dim(btn, why)
+  btn.next, btn.why = nil, why
+  btn:SetAttribute("type", nil)
+  btn:SetAttribute("spell", nil)
+  btn:SetAttribute("unit", nil)
+  if btn.icon.SetDesaturated then btn.icon:SetDesaturated(true) end
+  btn.icon:SetAlpha(0.45)
+  btn.count:SetText(why == "combat" and "" or "0")
+  btn.count:SetTextColor(0.6, 0.6, 0.6)
+end
+
 function Buffs:SetButton(g, active, counts, needers)
   if M.InCombat() then return end
   local btn = self:Button(g)
-  local n = M.db.rebuffButton and self:Next(active, counts, needers) or nil
+  -- shown whenever you have a buff to track and want the button; greyed with "0" when nobody needs one
+  local mine
+  for _, e in ipairs(active) do if e.known then mine = mine or e end end
+  if not (M.db.rebuffButton and mine) then btn:Hide() return end
+  local n = self:Next(active, counts, needers)
   btn.next = n
-  if not n then btn:Hide() return end
-  btn:SetAttribute("spell", n.spell)
-  btn:SetAttribute("unit", n.unit)
   -- in the panel's bottom strip, under the last person shown (secure, so placed out of combat; the panel itself resizes in combat)
   local last
   for _, b in ipairs(g.buttons) do
@@ -332,9 +354,22 @@ function Buffs:SetButton(g, active, counts, needers)
   end
   btn:ClearAllPoints()
   btn:SetPoint("TOPRIGHT", last or g, "BOTTOMRIGHT", 0, -3)
-  local _, icon = spellInfo(n.entry.id)
+  if not n then
+    btn.icon:SetTexture(mine.icon)
+    self:Dim(btn, "none")
+    btn:Show()
+    return
+  end
+  btn.why = nil
+  btn:SetAttribute("type", "spell")
+  btn:SetAttribute("spell", n.spell)
+  btn:SetAttribute("unit", n.unit)
+  local _, icon = spellInfo(n.entry.id or 0)
   btn.icon:SetTexture(icon or n.entry.icon)
-  btn.count:SetText(n.count > 1 and n.count or "")
+  if btn.icon.SetDesaturated then btn.icon:SetDesaturated(false) end
+  btn.icon:SetAlpha(1)
+  btn.count:SetText(n.count)
+  btn.count:SetTextColor(1, 1, 1)
   btn:Show()
 end
 
