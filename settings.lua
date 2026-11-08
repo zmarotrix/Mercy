@@ -38,6 +38,7 @@ Settings.panes.frames = function(parent)
     list:Toggle(labels[key][1], labels[key][2], function() return M:Group(key).on end,
       function(on) M:Group(key).on = on changed("layout") end)
   end
+  list:Toggle("Panels behind the groups", "A rounded panel with the group's name.", opt("panels", "layout"))
   list:Toggle("Party frames when you're alone", nil, opt("soloParty", "layout"))
   list:Toggle("Hide Blizzard's party and raid frames", "Turning this off takes a /reload.", function() return M.db.hideBlizzard end,
     function(on) M.db.hideBlizzard = on if on then M.Groups:HideBlizzard(true) else M:Print("Blizzard's frames come back after a /reload.") end end)

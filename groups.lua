@@ -51,11 +51,11 @@ end
 local function makeLabel(g, key)
   local label = CreateFrame("Button", nil, g)
   label:SetHeight(16)
-  label:SetPoint("BOTTOMLEFT", g, "TOPLEFT", 0, 2)
-  label:SetPoint("BOTTOMRIGHT", g, "TOPRIGHT", 0, 2)
+  label:SetPoint("BOTTOMLEFT", g, "TOPLEFT", 0, 3)
+  label:SetPoint("BOTTOMRIGHT", g, "TOPRIGHT", 0, 3)
   label.text = label:CreateFontString(nil, "OVERLAY")
-  label.text:SetFontObject(UI.Font("title", 12))
-  label.text:SetPoint("LEFT", 2, 0)
+  label.text:SetFontObject(UI.Font("title", 13))
+  label.text:SetPoint("CENTER", 0, 0)
   local c = UI.C.goldSoft
   label.text:SetTextColor(c[1], c[2], c[3])
   label.text:SetText(Groups.DEFS[key].label)
@@ -88,6 +88,15 @@ function Groups:BuildGroup(key)
   g:SetMovable(true)
   g:SetClampedToScreen(true)
   g:SetSize(10, 10)
+  -- a soft rounded panel behind the group, with its label inside the top, like HealersMate's
+  g.panel = CreateFrame("Frame", nil, g)
+  g.panel:SetPoint("TOPLEFT", g, "TOPLEFT", -6, 22)
+  g.panel:SetPoint("BOTTOMRIGHT", g, "BOTTOMRIGHT", 6, -6)
+  g.panel:SetFrameLevel(math.max(g:GetFrameLevel() - 1, 0))
+  g.panel.fill = UI.Round(g.panel, "BACKGROUND", -8, 8)
+  g.panel.fill:SetColor(UI.C.stone, 0.88)
+  g.panel.line = UI.Round(g.panel, "BORDER", 0, 8, "line")
+  g.panel.line:SetColor(UI.C.lineStrong, 0.9)
   g.label = makeLabel(g, key)
   g.buttons = {}
   local units = def.units
@@ -304,8 +313,12 @@ function Groups:UpdateAll()
 end
 
 function Groups:UpdateMovers()
-  local show = not M.db.locked or (M.Test and M.Test.active)
-  for _, g in pairs(self.frames) do g.label:SetShown(show and true or false) end
+  local moving = not M.db.locked or (M.Test and M.Test.active)
+  for _, g in pairs(self.frames) do
+    g.panel:SetShown(M.db.panels and true or false)
+    g.label:SetShown((M.db.panels or moving) and true or false)
+    g.label:EnableMouse(moving and true or false)
+  end
 end
 
 function Groups:ResetPositions()

@@ -93,6 +93,7 @@ M.DEFAULTS = {
   partySort = "role",               -- role, class, name, none
   color = "green",                  -- class, green, gradient
   nameColor = "class",              -- class or white
+  panels = true,                    -- a rounded panel behind each group, with its name
   text = "missing",                 -- missing, percent, none
   power = "healers",                -- healers, all, none
   range = true,

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.5, 2026-11-07
+
+Softer and rounded, closer to HealersMate (0.1.4's flat look went the wrong way, and its outlined text read as a border):
+- The game's own modern raid frame art: soft gradient health and power fills, a rounded dark background, and rounded target and aggro
+  frames (`RaidFrame-Hp-Fill`, `raidframe-hp-bg-white`, `_RaidFrame-Resource-*`, `RaidFrame-TargetFrame`, `RaidFrame-AgroFrame`).
+  Plain textures stand in if a client lacks one.
+- Bars sit 2 px inside the background, so it shows round them.
+- The name is centred with missing health (or Dead, Offline) under it, with a soft shadow and no outline.
+- A rounded panel behind each group, with its name centred at the top (setting: Panels behind the groups).
+
 ## 0.1.4, 2026-11-07
 
 A modern look (it read like classic HealBot):

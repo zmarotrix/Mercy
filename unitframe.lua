@@ -16,17 +16,33 @@ UF.all = {}
 UF.byUnit = {}
 
 UF.LAYOUTS = {
-  standard = { w = 120, h = 44, power = 3, font = 12, icon = 14 },
-  compact = { w = 92, h = 38, power = 3, font = 11, icon = 12 },
-  wide = { w = 170, h = 40, power = 3, font = 13, icon = 16 },
+  standard = { w = 120, h = 46, power = 4, font = 12, icon = 14 },
+  compact = { w = 96, h = 40, power = 3, font = 11, icon = 12 },
+  wide = { w = 170, h = 42, power = 4, font = 13, icon = 16 },
   tiny = { w = 72, h = 26, power = 0, font = 10, icon = 10 },
-  classic = { w = 140, h = 36, power = 6, font = 12, icon = 14 },
+  classic = { w = 140, h = 40, power = 7, font = 12, icon = 14 },
 }
 UF.LAYOUT_NAMES = { { "standard", "Standard" }, { "compact", "Compact" }, { "wide", "Wide" }, { "tiny", "Tiny" }, { "classic", "Classic" } }
 
--- flat bars with a faint sheen on top: the modern look (Cell, Grid2, ElvUI), not the glossy 2006 bar texture
-local BAR = "Interface\\Buttons\\WHITE8X8"
-UF.POWER_COLORS = { MANA = { 0.24, 0.52, 1 }, RAGE = { 0.9, 0.25, 0.25 }, ENERGY = { 1, 0.85, 0.25 }, FOCUS = { 1, 0.6, 0.25 },
+-- The client's own modern raid frame art (CompactUnitFrame.xml): soft gradient fills, a rounded background, and rounded
+-- target and aggro frames. Plain textures stand in if a client lacks an atlas.
+local FLAT = "Interface\\Buttons\\WHITE8X8"
+local ART = {
+  health = "RaidFrame-Hp-Fill", healthBg = "raidframe-hp-bg-white",
+  power = "_RaidFrame-Resource-Fill", powerBg = "_RaidFrame-Resource-Background",
+  target = "RaidFrame-TargetFrame", aggro = "RaidFrame-AgroFrame",
+}
+local function hasAtlas(name)
+  local info = M.Plain(M.Fn("C_Texture", "GetAtlasInfo"), name)
+  return type(info) == "table"
+end
+---Puts an atlas on a texture, or a flat colour if the client hasn't got it.
+local function art(tex, name)
+  if hasAtlas(name) and tex.SetAtlas then tex:SetAtlas(name, false) return true end
+  tex:SetTexture(FLAT)
+  return false
+end
+UF.POWER_COLORS = { MANA = { 0.3, 0.55, 1 }, RAGE = { 0.9, 0.25, 0.25 }, ENERGY = { 1, 0.85, 0.25 }, FOCUS = { 1, 0.6, 0.25 },
   RUNIC_POWER = { 0, 0.82, 1 } }
 -- the client's own small role icons (the ones its raid frames use)
 local ROLE_ATLAS = { TANK = "roleicon-tiny-tank", HEALER = "roleicon-tiny-healer", DAMAGER = "roleicon-tiny-dps" }
@@ -36,9 +52,9 @@ local HEALER_CLASSES = { PRIEST = true, DRUID = true, PALADIN = true, SHAMAN = t
 -- Building
 -------------------------------------------------------------------------------------------
 
-local function statusbar(parent, r, g, b, a)
+local function statusbar(parent, r, g, b, a, atlas)
   local s = CreateFrame("StatusBar", nil, parent)
-  s:SetStatusBarTexture(BAR)
+  if atlas and hasAtlas(atlas) then s:SetStatusBarTexture(atlas) else s:SetStatusBarTexture(FLAT) end
   s:SetStatusBarColor(r, g, b, a or 1)
   s:SetMinMaxValues(0, 1)
   s:SetValue(0)
@@ -136,23 +152,20 @@ function UF:Create(parent, unit, name)
 
   b.content = CreateFrame("Frame", nil, b)
   b.content:SetAllPoints()
-  -- a 1 px black edge around a dark slate well: the slate is what shows where health is missing
-  b.edge = b.content:CreateTexture(nil, "BACKGROUND", nil, -8)
-  b.edge:SetAllPoints()
-  b.edge:SetColorTexture(0, 0, 0, 1)
+  -- the game's soft raid frame background, dark: it's what shows where health is missing
   b.bg = b.content:CreateTexture(nil, "BACKGROUND", nil, -7)
-  b.bg:SetPoint("TOPLEFT", 1, -1)
-  b.bg:SetPoint("BOTTOMRIGHT", -1, 1)
-  b.bg:SetColorTexture(0.1, 0.1, 0.11, 1)
+  b.bg:SetAllPoints()
+  art(b.bg, ART.healthBg)
+  b.bg:SetVertexColor(0.13, 0.13, 0.15, 1)
 
   -- health, with incoming heals and absorbs drawn after its fill; the clip keeps them inside the bar
   b.clip = CreateFrame("Frame", nil, b.content)
   if b.clip.SetClipsChildren then b.clip:SetClipsChildren(true) end
-  b.health = statusbar(b.clip, M.GREEN[1], M.GREEN[2], M.GREEN[3])
+  b.health = statusbar(b.clip, M.GREEN[1], M.GREEN[2], M.GREEN[3], 1, ART.health)
   b.health:SetAllPoints(b.clip)
-  b.incAll = statusbar(b.clip, 0.45, 0.95, 0.5, 0.35)
-  b.incMine = statusbar(b.clip, 0.65, 1, 0.7, 0.65)
-  b.absorb = statusbar(b.clip, 0.85, 0.9, 1, 0.55)
+  b.incAll = statusbar(b.clip, 0.45, 0.95, 0.5, 0.35, ART.health)
+  b.incMine = statusbar(b.clip, 0.65, 1, 0.7, 0.65, ART.health)
+  b.absorb = statusbar(b.clip, 0.85, 0.9, 1, 0.55, ART.health)
   local fill = b.health:GetStatusBarTexture() or b.health
   for _, s in ipairs({ b.incAll, b.incMine }) do
     s:SetPoint("TOPLEFT", fill, "TOPRIGHT")
@@ -162,43 +175,35 @@ function UF:Create(parent, unit, name)
   b.absorb:SetPoint("TOPLEFT", after, "TOPRIGHT")
   b.absorb:SetPoint("BOTTOMLEFT", after, "BOTTOMRIGHT")
 
-  -- a faint light from the top of the bar
-  b.sheenFrame = CreateFrame("Frame", nil, b.clip)
-  b.sheenFrame:SetAllPoints(b.clip)
-  b.sheenFrame:SetFrameLevel(b.absorb:GetFrameLevel() + 1)
-  b.sheen = b.sheenFrame:CreateTexture(nil, "OVERLAY")
-  b.sheen:SetAllPoints()
-  b.sheen:SetTexture(BAR)
-  if b.sheen.SetGradient and CreateColor then
-    b.sheen:SetGradient("VERTICAL", CreateColor(0, 0, 0, 0.12), CreateColor(1, 1, 1, 0.12))
-  else
-    b.sheen:SetAlpha(0)
-  end
+  b.powerBg = b.content:CreateTexture(nil, "BACKGROUND", nil, -6)
+  art(b.powerBg, ART.powerBg)
+  b.power = statusbar(b.content, 0.3, 0.55, 1, 1, ART.power)
+  b.powerBg:SetAllPoints(b.power)
 
-  b.power = statusbar(b.content, 0.24, 0.52, 1)
-
+  -- text in the middle, as HealersMate has it: the name, and missing health under it. A plain soft shadow, no outline.
   local text = CreateFrame("Frame", nil, b.content)
   text:SetAllPoints()
   text:SetFrameLevel(b.content:GetFrameLevel() + 5)
   b.name = text:CreateFontString(nil, "OVERLAY")
-  b.name:SetPoint("LEFT", b.clip, "LEFT", 5, 0)
-  b.name:SetJustifyH("LEFT")
+  b.name:SetJustifyH("CENTER")
   if b.name.SetWordWrap then b.name:SetWordWrap(false) end
   b.value = text:CreateFontString(nil, "OVERLAY")
-  b.value:SetPoint("RIGHT", b.clip, "RIGHT", -5, 0)
-  b.value:SetJustifyH("RIGHT")
-  b.value:SetTextColor(1, 1, 1, 0.85)
+  b.value:SetJustifyH("CENTER")
+  b.value:SetTextColor(1, 1, 1, 0.9)
   b.status = text:CreateFontString(nil, "OVERLAY")
-  b.status:SetPoint("RIGHT", b.clip, "RIGHT", -5, 0)
-  b.status:SetTextColor(0.7, 0.7, 0.72)
+  b.status:SetJustifyH("CENTER")
+  b.status:SetTextColor(0.72, 0.72, 0.74)
+  for _, fs in ipairs({ b.name, b.value, b.status }) do
+    if fs.SetShadowOffset then fs:SetShadowOffset(1, -1) fs:SetShadowColor(0, 0, 0, 0.9) end
+  end
   b.role = text:CreateTexture(nil, "OVERLAY")
-  b.role:SetSize(10, 10)
-  b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 2, -2)
+  b.role:SetSize(11, 11)
+  b.role:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 3, -3)
   b.raidIcon = text:CreateTexture(nil, "OVERLAY")
   b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   b.raidIcon:SetSize(12, 12)
-  b.raidIcon:SetPoint("TOP", b.content, "TOP", 0, 4)
-  -- no UI.Glow here: its copies centre on the FontString, and these are left-aligned in a wider box (they ghosted)
+  b.raidIcon:SetPoint("TOPRIGHT", b.clip, "TOPRIGHT", -3, -3)
+  -- no UI.Glow here: its copies centre on the FontString and ghosted on these
 
   -- low health: a red wash whose strength comes from a curve, pulsing
   b.flashFrame = CreateFrame("Frame", nil, b.content)
@@ -209,24 +214,32 @@ function UF:Create(parent, unit, name)
   b.flash:SetColorTexture(1, 0.15, 0.1, 0.28)
   b.flash:SetAlpha(0)
 
-  -- borders: your target (white) and aggro (red), behind the dispel highlight
-  local function border(r, g, bl, level)
+  -- borders: your target and aggro, the game's own rounded raid frame art; thin lines if the client lacks it
+  local function border(atlas, r, g, bl, level)
     local f = CreateFrame("Frame", nil, b.content)
     f:SetAllPoints()
     f:SetFrameLevel(b.content:GetFrameLevel() + level)
-    for _, p in ipairs({ { "TOPLEFT", "TOPRIGHT", nil, 1 }, { "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1 }, { "TOPLEFT", "BOTTOMLEFT", 1, nil },
-      { "TOPRIGHT", "BOTTOMRIGHT", 1, nil } }) do
-      local t = f:CreateTexture(nil, "OVERLAY")
-      t:SetColorTexture(r, g, bl, 1)
-      t:SetPoint(p[1]) t:SetPoint(p[2])
-      if p[3] then t:SetWidth(p[3]) end
-      if p[4] then t:SetHeight(p[4]) end
+    local t = f:CreateTexture(nil, "OVERLAY")
+    t:SetAllPoints()
+    if hasAtlas(atlas) and t.SetAtlas then
+      t:SetAtlas(atlas, false)
+      if atlas == ART.aggro then t:SetVertexColor(r, g, bl, 1) end
+    else
+      t:SetTexture(nil)
+      for _, p in ipairs({ { "TOPLEFT", "TOPRIGHT", nil, 1 }, { "BOTTOMLEFT", "BOTTOMRIGHT", nil, 1 }, { "TOPLEFT", "BOTTOMLEFT", 1, nil },
+        { "TOPRIGHT", "BOTTOMRIGHT", 1, nil } }) do
+        local e = f:CreateTexture(nil, "OVERLAY")
+        e:SetColorTexture(r, g, bl, 1)
+        e:SetPoint(p[1]) e:SetPoint(p[2])
+        if p[3] then e:SetWidth(p[3]) end
+        if p[4] then e:SetHeight(p[4]) end
+      end
     end
     f:SetAlpha(0)
     return f
   end
-  b.aggro = border(0.9, 0.15, 0.1, 6)
-  b.targetBorder = border(1, 1, 1, 7)
+  b.aggro = border(ART.aggro, 0.9, 0.15, 0.1, 6)
+  b.targetBorder = border(ART.target, 1, 1, 1, 7)
 
   b.highlight = makeHighlight(b.content)
   b.container = CreateFrame("Frame", nil, b.content)       -- Blizzard's aura container draws here (A)
@@ -254,23 +267,38 @@ function UF:ApplyLayout(b, key)
   b.layout = L
   b:SetSize(L.w, L.h)
   b.iconSize = L.icon
+  local PAD = 2   -- the bars sit inside the soft background, which shows round them
   local showPower = L.power > 0 and self:WantsPower(b)
   b.clip:ClearAllPoints()
-  b.clip:SetPoint("TOPLEFT", b.content, "TOPLEFT", 1, -1)
-  b.clip:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -1, showPower and (L.power + 2) or 1)   -- 1 px gap over the power strip
+  b.clip:SetPoint("TOPLEFT", b.content, "TOPLEFT", PAD, -PAD)
+  b.clip:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -PAD, showPower and (L.power + PAD + 1) or PAD)
   b.power:ClearAllPoints()
-  b.power:SetPoint("BOTTOMLEFT", b.content, "BOTTOMLEFT", 1, 1)
-  b.power:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -1, 1)
+  b.power:SetPoint("BOTTOMLEFT", b.content, "BOTTOMLEFT", PAD, PAD)
+  b.power:SetPoint("BOTTOMRIGHT", b.content, "BOTTOMRIGHT", -PAD, PAD)
   b.power:SetHeight(math.max(L.power, 1))
   b.power:SetShown(showPower)
-  local barWidth = L.w - 2
+  b.powerBg:SetShown(showPower)
+  local barWidth = L.w - PAD * 2
   for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetWidth(barWidth) end
-  -- an outline keeps class colours readable on a green bar (hunter green on green, shaman blue)
-  b.name:SetFontObject(UI.Font("bold", L.font, M.db.nameColor == "class" and "OUTLINE" or nil))
-  b.name:SetWidth(L.w - (key == "tiny" and 8 or 46))
-  b.value:SetFontObject(UI.Font("body", L.font - 1, "OUTLINE"))
-  b.value:SetShown(key ~= "tiny")
-  b.status:SetFontObject(UI.Font("body", L.font - 1, "OUTLINE"))
+  -- the name and, under it, missing health or the status, centred on the bar
+  local twoLines = key ~= "tiny"
+  b.name:SetFontObject(UI.Font("bold", L.font))
+  b.name:SetWidth(L.w - 10)
+  b.value:SetFontObject(UI.Font("body", L.font - 1))
+  b.status:SetFontObject(UI.Font("body", L.font - 1))
+  b.name:ClearAllPoints()
+  b.value:ClearAllPoints()
+  b.status:ClearAllPoints()
+  if twoLines then
+    b.name:SetPoint("BOTTOM", b.clip, "CENTER", 0, 0)
+    b.value:SetPoint("TOP", b.clip, "CENTER", 0, -1)
+    b.status:SetPoint("TOP", b.clip, "CENTER", 0, -1)
+  else
+    b.name:SetPoint("CENTER", b.clip, "CENTER", 0, 0)
+    b.value:SetPoint("RIGHT", b.clip, "RIGHT", -3, 0)
+    b.status:SetPoint("RIGHT", b.clip, "RIGHT", -3, 0)
+  end
+  b.value:SetShown(twoLines)
   for i, icon in ipairs(b.debuffs) do
     icon:SetSize(L.icon, L.icon)
     icon:ClearAllPoints()
