@@ -91,7 +91,7 @@ function Groups:BuildGroup(key)
   -- a soft rounded panel behind the group, with its label inside the top, like HealersMate's
   g.panel = CreateFrame("Frame", nil, g)
   g.panel:SetPoint("TOPLEFT", g, "TOPLEFT", -6, 22)
-  g.panel:SetPoint("BOTTOMRIGHT", g, "BOTTOMRIGHT", 6, -6)
+  g.panel:SetSize(10, 10)   -- Groups:FitPanel sizes it to the frames showing
   g.panel:SetFrameLevel(math.max(g:GetFrameLevel() - 1, 0))
   g.panel.fill = UI.Round(g.panel, "BACKGROUND", -8, 8)
   g.panel.fill:SetColor(UI.C.stone, 0.88)
@@ -104,6 +104,9 @@ function Groups:BuildGroup(key)
   for i, unit in ipairs(units) do
     local b = M.UF:Create(g, unit, "MercyUnit_" .. key .. i)
     b.group = key
+    -- the panel follows who's there: it isn't protected, so it can resize in combat when the game shows or hides a frame
+    b:HookScript("OnShow", function() Groups:FitPanelSoon(g) end)
+    b:HookScript("OnHide", function() Groups:FitPanelSoon(g) end)
     g.buttons[i] = b
     self.buttons[#self.buttons + 1] = b
     if def.slots then
@@ -181,6 +184,7 @@ function Groups:Ordered(g)
 end
 
 local function place(g, b, col, row, L)
+  b.col, b.row = col, row
   b:ClearAllPoints()
   b:SetPoint("TOPLEFT", g, "TOPLEFT", col * (L.w + GAP), -row * (L.h + GAP))
 end
@@ -217,6 +221,8 @@ function Groups:LayoutGroup(g)
     rows = (key == "target" or key == "focus") and 1 or #g.buttons
   end
   g:SetSize(math.max(cols * (L.w + GAP) - GAP, 10), math.max(rows * (L.h + GAP) - GAP, 10))
+  g.cell = L
+  self:FitPanel(g)
 end
 
 ---Who the tanks are: the game's tank role, your own role marks, then main tanks.
@@ -310,6 +316,25 @@ function Groups:UpdateAll()
   for _, b in ipairs(self.buttons) do
     if b.fake or b:IsShown() then M.UF:Update(b) end
   end
+end
+
+---Sizes a group's panel to the frames showing now: as many rows (and, in a raid, columns) as there are people.
+function Groups:FitPanel(g)
+  local L = g.cell
+  if not (g.panel and L) then return end
+  local cols, rows = 0, 0
+  for _, b in ipairs(g.buttons) do
+    if b.col and (b:IsShown() or b.fake) then
+      cols = math.max(cols, b.col + 1)
+      rows = math.max(rows, b.row + 1)
+    end
+  end
+  cols, rows = math.max(cols, 1), math.max(rows, 1)
+  g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28)
+end
+
+function Groups:FitPanelSoon(g)
+  Core:NextFrame(function() self:FitPanel(g) end, "mercy-fit-" .. g.key)
 end
 
 function Groups:UpdateMovers()

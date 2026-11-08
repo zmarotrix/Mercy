@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.9, 2026-11-07
+
+- A group's panel fits the people in it: alone it wraps just your frame, and it grows and shrinks as people join and leave, in combat
+  too (the panel isn't protected, so it can follow the game showing and hiding frames). Someone leaving mid-fight leaves a gap until
+  combat ends, when the frames close up.
+
 ## 0.1.8, 2026-11-07
 
 - The click-casting boxes show the spell's icon (or the item's or macro's) as soon as the text matches something you have, as
