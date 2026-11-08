@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.17, 2026-11-07
+
+- Setting descriptions wrap onto several lines instead of being cut off with "…": each is allowed several lines, and a tab's list is laid
+  out again once it has its real width.
+
 ## 0.2.16, 2026-11-07
 
 - Test mode is for placing frames: while it's on, every group with people in it shows its name and can be dragged, even with the frames

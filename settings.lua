@@ -273,6 +273,7 @@ Settings.panes.binds = function(parent)
   list:Toggle("Spells tooltip", "Your binds, and casts left on your mana, when you hover a frame.", opt("spellsTooltip"))
   list:Toggle("The game's unit tooltip", "Also makes [@mouseover] in your macros work on our frames.", opt("unitTooltip"))
   function pane:Refresh() self:Fill() list:Refresh() end
+  pane.list = list
   return pane
 end
 
@@ -429,6 +430,19 @@ end
 -- The window
 -------------------------------------------------------------------------------------------
 
+---Descriptions wrap onto as many lines as they need. The Core's settings rows ask for wrapping, but in game they came out as one
+---truncated line: so allow several lines explicitly, and lay the list out again once the pane has its real width.
+local function wrapDescriptions(list)
+  if not (list and list.rows) then return end
+  for _, r in ipairs(list.rows) do
+    if r.desc then
+      r.desc:SetWordWrap(true)
+      if r.desc.SetMaxLines then r.desc:SetMaxLines(6) end
+    end
+  end
+  if list.Layout then list:Layout() end
+end
+
 local function show(key)
   for k, pane in pairs(Settings.built or {}) do pane.frame:SetShown(k == key) end
   local p = Settings.built[key]
@@ -441,6 +455,9 @@ local function show(key)
   end
   p.frame:Show()
   if p.Refresh then p:Refresh() end
+  local list = p.rows and p or p.list
+  wrapDescriptions(list)
+  if C_Timer and C_Timer.After then C_Timer.After(0.05, function() wrapDescriptions(list) end) end
 end
 
 local function build()
