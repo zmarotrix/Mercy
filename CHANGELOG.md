@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0, 2026-11-07
+
+Helping you buff, and seeing who needs you:
+- **Who needs your buffs:** out of combat, anyone missing one of your class's buffs, or with less than 5 minutes of it left, has its icon
+  in their frame's top right (faded when it's only running out). Priest: Fortitude, Divine Spirit (mana users), Shadow Protection (off by
+  default). Druid: Mark of the Wild, Thorns (tanks). Mage: Arcane Intellect (mana users). Paladin: any blessing of yours. Names come from
+  the client, so every rank and language matches.
+- **Rebuff button** by the group's name: each click casts on the next person who needs it, in range, or the party version (Prayer of
+  Fortitude, Gift of the Wild) when three in one party do; a paladin's is Wisdom on mana users, Might on the rest. It hides in combat.
+- **The group's summary**, by its name: "Dispel 2" (in combat too) and how many need each buff.
+- The raid mark moved next to the role icon, to make room for the buff marker.
+- Settings: Who needs your buffs, Rebuff button, Rebuff when less than N minutes, and each of your class's buffs on or off.
+
 ## 0.1.12, 2026-11-07
 
 - Health and mana bars have the mockup's gradient: lighter on the top half, darker on the bottom half, the bar's own colour in the

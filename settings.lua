@@ -163,6 +163,20 @@ Settings.panes.indicators = function(parent)
   list:Slider("Most debuff icons", nil, 1, 5, 1, function() return M.db.maxDebuffs end, function(v) M.db.maxDebuffs = v changed() end, "%.0f", 1)
   list:Toggle("Your buffs", "Your HoTs and buffs on each person, with their time, bottom right. In combat Blizzard's own code draws them.", opt("myBuffs"))
   list:Slider("Most buff icons", nil, 1, 5, 1, function() return M.db.maxBuffs end, function(v) M.db.maxBuffs = v changed() end, "%.0f", 1)
+  list:Header("Buffs you give")
+  list:Toggle("Who needs your buffs", "Out of combat, a small icon on anyone missing one of your buffs or about to lose it, and a count by the group's name.",
+    opt("buffReminders"))
+  list:Toggle("Rebuff button", "By the group's name: each click casts the buff on the next person who needs it, or the party version when three need it.",
+    opt("rebuffButton"))
+  list:Slider("Rebuff when less than", nil, 1, 15, 1, function() return M.db.rebuffMinutes end,
+    function(v) M.db.rebuffMinutes = v changed() end, "%.0f min", 1)
+  for _, e in ipairs(M.Buffs.LIST[M.class or ""] or {}) do
+    local name = M.Plain(M.Fn("C_Spell", "GetSpellInfo"), e.id)
+    name = type(name) == "table" and name.name or e.key
+    list:Toggle(name, e.who == "mana" and "Mana users only." or e.who == "tanks" and "Tanks only." or nil,
+      function() local v = (M.db.buffTrack or {})[e.key] if v == nil then return e.on end return v end,
+      function(on) M.db.buffTrack[e.key] = on changed() end)
+  end
   list:Header("Health")
   list:Dropdown("Bar colour", nil, { { "class", "Class" }, { "green", "Green" }, { "gradient", "Green to red" } }, opt("color"))
   list:Dropdown("Name colour", nil, { { "class", "Class" }, { "white", "White" } }, opt("nameColor", "layout"))

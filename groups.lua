@@ -98,6 +98,11 @@ function Groups:BuildGroup(key)
   g.panel.line = UI.Round(g.panel, "BORDER", 0, 8, "line")
   g.panel.line:SetColor(UI.C.lineStrong, 0.9)
   g.label = makeLabel(g, key)
+  -- how many need a dispel (in combat too) and your buffs (out of combat), on the label's right
+  g.summary = g.label:CreateFontString(nil, "OVERLAY")
+  g.summary:SetFontObject(UI.Font("body", 11))
+  g.summary:SetPoint("RIGHT", g.label, "RIGHT", -22, 0)
+  g.summary:SetJustifyH("RIGHT")
   g.buttons = {}
   local units = def.units
   if def.slots then units = {} for i = 1, def.slots do units[i] = "raid" .. i end end
@@ -137,6 +142,7 @@ function Groups:Build()
   Core:On("PLAYER_ROLES_ASSIGNED", Groups, function() Groups:RosterChanged() end)
   Core:On("PLAYER_ENTERING_WORLD", Groups, function() Groups:RosterChanged() end)
   Core:On("PLAYER_REGEN_ENABLED", Groups, function() Groups:UpdateAll() end)
+  if C_Timer and C_Timer.NewTicker then C_Timer.NewTicker(0.5, function() Groups:UpdateSummaries() end) end
 end
 
 ---Blizzard's aura container for each button with a fixed unit (tank slots get theirs when they're assigned).
@@ -331,6 +337,34 @@ function Groups:FitPanel(g)
   end
   cols, rows = math.max(cols, 1), math.max(rows, 1)
   g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28)
+end
+
+---"Dispel 2  ·  Power Word: Fortitude 3": who needs you, counted per group.
+function Groups:UpdateSummaries()
+  for key, g in pairs(self.frames) do
+    if g.summary then
+      local parts = {}
+      local dispel = 0
+      for _, b in ipairs(g.buttons) do
+        if b.fake then
+          local t = b.fake.dispel
+          if t and (M.db.dispelScope == "any" or (M.Auras.cures and M.Auras.cures[t])) then dispel = dispel + 1 end
+        elseif b:IsShown() and b.unit ~= "none" and not b.dead then
+          local ids = M.Auras.Ids(b.unit, M.Auras:Filter(), 1)
+          if ids and ids[1] then dispel = dispel + 1 end
+        end
+      end
+      if dispel > 0 then parts[#parts + 1] = "|cffd9a8ffDispel " .. dispel .. "|r" end
+      local counts = M.Buffs and M.Buffs.counts[key]
+      if counts and not M.InCombat() then
+        for _, e in ipairs(M.Buffs:Active()) do
+          local c = counts[e.key] or 0
+          if c > 0 then parts[#parts + 1] = "|cffffeea0" .. e.name .. " " .. c .. "|r" end
+        end
+      end
+      g.summary:SetText(table.concat(parts, "  "))
+    end
+  end
 end
 
 function Groups:FitPanelSoon(g)

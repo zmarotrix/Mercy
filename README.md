@@ -29,6 +29,12 @@ game's dispel overlay on Mercy's frames instead. Raid leaders can show anything 
 Debuff icons in combat are drawn by the game's own code on Mercy's frames, with bigger icons for boss debuffs and the boss mechanics
 add-ons can never see.
 
+### Helping you buff
+Out of combat, anyone missing one of your buffs (Fortitude, Divine Spirit, Mark of the Wild, Thorns on tanks, Arcane Intellect,
+your blessings), or about to lose it, has its icon on their frame, and the group's name says how many. The rebuff button beside it casts
+on the next person who needs it, or the party version when three in one party do. Every click is one cast you make yourself. In combat
+the reminders step aside (the game hides buff names then) and come back after. Your own buffs on people show with their time throughout.
+
 ### Click-casting
 Every mouse button (left, right, middle, 4 and 5) with no modifier, Shift, Ctrl, Alt or any mix, separately for friendly and hostile
 frames. A bind can be a spell (`Renew`, or `Heal(Rank 2)`), `Item: name`, `Macro: name`, Target, Assist, Focus, Context (the menu),

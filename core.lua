@@ -103,6 +103,10 @@ M.DEFAULTS = {
   dispelScope = "mine",             -- mine (HARMFUL|RAID) or any (HARMFUL|RAID_PLAYER_DISPELLABLE)
   debuffIcons = true,
   myBuffs = true,                   -- your buffs and HoTs on people
+  buffReminders = true,             -- who needs your buffs, out of combat
+  rebuffButton = true,              -- the button that casts the next one
+  rebuffMinutes = 5,                -- a buff with less than this left counts as needed
+  buffTrack = {},                   -- [key] = on/off, for your class's buffs
   maxBuffs = 3,
   maxDebuffs = 3,
   aggro = true,
@@ -196,6 +200,7 @@ function M:Changed(what)
   end
   if self.Auras then self.Auras:SettingsChanged() end
   if self.Groups then self.Groups:UpdateAll() end
+  if self.Buffs then self.Buffs:Reset() end
   if self.Settings then self.Settings:Refresh() end
 end
 
@@ -225,6 +230,7 @@ Core:On("SPELLS_CHANGED", M, function()
   if not M.db or not M.Groups or not M.Groups.built then return end
   M.Auras:SpellsChanged()
   M.Binds:ApplyAll()
+  if M.Buffs then M.Buffs:Reset() end
 end)
 
 -------------------------------------------------------------------------------------------

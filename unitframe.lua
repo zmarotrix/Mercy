@@ -277,7 +277,13 @@ function UF:Create(parent, unit, name)
   b.raidIcon = text:CreateTexture(nil, "OVERLAY")
   b.raidIcon:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
   b.raidIcon:SetSize(12, 12)
-  b.raidIcon:SetPoint("TOPRIGHT", b.clip, "TOPRIGHT", -3, -3)
+  b.raidIcon:SetPoint("TOPLEFT", b.clip, "TOPLEFT", 16, -3)
+  -- the buff this person needs from you (buffs.lua), out of combat
+  b.needBuff = text:CreateTexture(nil, "OVERLAY")
+  b.needBuff:SetSize(14, 14)
+  b.needBuff:SetPoint("TOPRIGHT", b.clip, "TOPRIGHT", -3, -3)
+  b.needBuff:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  b.needBuff:Hide()
   -- no UI.Glow here: its copies centre on the FontString and ghosted on these
 
   -- low health: a red wash whose strength comes from a curve, pulsing
