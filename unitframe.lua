@@ -82,6 +82,28 @@ local function halo(fs)
   end
 end
 
+---A soft vertical gradient over a bar's filled part, as in the mockup: lighter on the top half, darker on the bottom half,
+---the bar's own colour untouched in the middle. Two textures that follow the fill as it moves, rounded by the bar's mask.
+local function shade(bar, mask, strength)
+  local fill = bar:GetStatusBarTexture() or bar
+  local light = bar:CreateTexture(nil, "OVERLAY")
+  light:SetTexture(FLAT)
+  light:SetPoint("TOPLEFT", fill, "TOPLEFT")
+  light:SetPoint("BOTTOMRIGHT", fill, "RIGHT")
+  local dark = bar:CreateTexture(nil, "OVERLAY")
+  dark:SetTexture(FLAT)
+  dark:SetPoint("TOPLEFT", fill, "LEFT")
+  dark:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT")
+  if light.SetGradient and CreateColor then
+    light:SetGradient("VERTICAL", CreateColor(1, 1, 1, 0), CreateColor(1, 1, 1, strength))
+    dark:SetGradient("VERTICAL", CreateColor(0, 0, 0, strength), CreateColor(0, 0, 0, 0))
+  else
+    light:SetAlpha(0) dark:SetAlpha(0)
+  end
+  if mask and light.AddMaskTexture then light:AddMaskTexture(mask) dark:AddMaskTexture(mask) end
+  bar.shade = { light, dark }
+end
+
 local function statusbar(parent, r, g, b, a, atlas)
   local s = CreateFrame("StatusBar", nil, parent)
   if atlas and hasAtlas(atlas) then s:SetStatusBarTexture(atlas) else s:SetStatusBarTexture(FLAT) end
@@ -211,6 +233,7 @@ function UF:Create(parent, unit, name)
     b.masks[#b.masks + 1] = m
   end
   if b.bg.AddMaskTexture then b.bg:AddMaskTexture(b.masks[1]) end
+  shade(b.health, b.masks[1], 0.32)
   local fill = b.health:GetStatusBarTexture() or b.health
   for _, s in ipairs({ b.incAll, b.incMine }) do
     s:SetPoint("TOPLEFT", fill, "TOPRIGHT")
@@ -229,6 +252,7 @@ function UF:Create(parent, unit, name)
   local powerFill = b.power:GetStatusBarTexture()
   if powerFill and powerFill.AddMaskTexture then powerFill:AddMaskTexture(b.powerMask) end
   if b.powerBg.AddMaskTexture then b.powerBg:AddMaskTexture(b.powerMask) end
+  shade(b.power, b.powerMask, 0.3)
 
   -- text in the middle, as HealersMate has it: the name, and missing health under it. A plain soft shadow, no outline.
   local text = CreateFrame("Frame", nil, b.content)

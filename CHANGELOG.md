@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.12, 2026-11-07
+
+- Health and mana bars have the mockup's gradient: lighter on the top half, darker on the bottom half, the bar's own colour in the
+  middle. It follows the fill as health changes and keeps the rounded corners.
+
 ## 0.1.11, 2026-11-07
 
 - **Your buffs on people:** your HoTs and buffs on each person show bottom right, with their time, in combat too. Blizzard's own raid
