@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7, 2026-11-07
+
+- **Dragging works again:** grab a group by its name, out of combat. 0.2.3 locked every save so empty panels could hide, which also
+  stopped dragging; the two are separate now and your save is unlocked once. "Lock the frames" (or /mercy lock) still stops dragging.
+- /mercy unlock also shows every group's name, empty ones like Focus too, so they can be found and moved, until /mercy lock.
+
 ## 0.2.6, 2026-11-07
 
 - The rebuff button stays put: when nobody needs a buff it's greyed with "0" and a click does nothing; in combat it greys the same way

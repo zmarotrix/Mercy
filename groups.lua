@@ -345,7 +345,7 @@ function Groups:FitPanel(g)
   local strip = (g.key == "party" or g.key == "raid") and 20 or 0   -- the bottom strip: dispels, buffs, the rebuff button
   g.panel:SetSize(cols * (L.w + GAP) - GAP + 12, rows * (L.h + GAP) - GAP + 28 + strip)
   -- the panel and its name: only when someone's in it (unless you're moving the frames), at this group's opacity
-  local moving = not M.db.locked or (M.Test and M.Test.active)
+  local moving = M.showAll or (M.Test and M.Test.active)   -- every group's name shows, empty or not, to be found and moved
   local showPanel = M.db.panels and (moving or not empty or not M.db.hideEmpty)
   local alpha = M:Group(g.key).alpha or 0.88
   g.panel.fill:SetColor(UI.C.stone, alpha)
@@ -387,9 +387,8 @@ function Groups:FitPanelSoon(g)
 end
 
 function Groups:UpdateMovers()
-  local moving = not M.db.locked or (M.Test and M.Test.active)
   for _, g in pairs(self.frames) do
-    g.label:EnableMouse(moving and true or false)
+    g.label:EnableMouse(not M.db.locked)   -- drag a group by its name, unless the frames are locked
     self:FitPanel(g)
   end
 end

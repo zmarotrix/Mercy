@@ -50,7 +50,8 @@ Settings.panes.frames = function(parent)
   list:Toggle("Party frames when you're alone", nil, opt("soloParty", "layout"))
   list:Toggle("Hide Blizzard's party and raid frames", "Turning this off takes a /reload.", function() return M.db.hideBlizzard end,
     function(on) M.db.hideBlizzard = on if on then M.Groups:HideBlizzard(true) else M:Print("Blizzard's frames come back after a /reload.") end end)
-  list:Toggle("Lock the frames", "Unlocked, each group has a label to drag it by.", function() return M.db.locked end, function(on) M:SetLocked(on) end)
+  list:Toggle("Lock the frames", "Unlocked, drag a group by its name (out of combat). /mercy unlock also shows empty groups, to move them.",
+    function() return M.db.locked end, function(on) M:SetLocked(on) end)
   list:Buttons("Test", "Invented players, to place and style the frames.", {
     { "Party", function() M.Test:Toggle(5) end }, { "Raid of 25", function() M.Test:Toggle(25) end }, { "Stop", function() if M.Test.active then M.Test:Stop() end end } })
   list:Buttons("Positions", nil, { { "Reset", function() M.Groups:ResetPositions() end } })

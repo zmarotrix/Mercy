@@ -84,7 +84,7 @@ end
 M.GROUPS = { "party", "raid", "tanks", "pets", "target", "focus" }
 
 M.DEFAULTS = {
-  locked = true,                    -- /mercy unlock (or test mode) shows the labels to drag
+  locked = false,                   -- true: groups can't be dragged by their names (Lock the frames, /mercy lock)
   hideBlizzard = true,
   soloParty = true,                 -- party frames (you alone) when not in a group
   layout = "standard",              -- standard, compact, wide, tiny, classic
@@ -170,6 +170,11 @@ function M:InitDB()
   if self.db.schema < 4 then
     self.db.locked = true
     self.db.schema = 4
+  end
+  -- 0.2.7: dragging by a group's name works again by default; 0.2.4-0.2.6 locked every save, which only hid empty panels
+  if self.db.schema < 5 then
+    self.db.locked = false
+    self.db.schema = 5
   end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")
@@ -257,8 +262,11 @@ function M:OpenSettings(tab)
   if self.Settings then self.Settings:Open(tab) end
 end
 
-function M:SetLocked(locked)
+---Lock (no dragging) or unlock. Unlocking with /mercy unlock also shows every group's name, empty ones too, until you lock again,
+---so a Focus or Target with nobody in it can be found and moved.
+function M:SetLocked(locked, showAll)
   self.db.locked = locked and true or false
+  self.showAll = (not locked and showAll) and true or false
   if self.Groups then self.Groups:UpdateMovers() end
 end
 
@@ -274,7 +282,7 @@ SlashCmdList["MERCY"] = function(msg)
   elseif lower == "lock" then
     M:SetLocked(true) M:Print("Frames locked.")
   elseif lower == "unlock" then
-    M:SetLocked(false) M:Print("Frames unlocked: drag a group by its label. /mercy lock when you're done.")
+    M:SetLocked(false, true) M:Print("Every group's name is showing, empty ones too: drag one to move it. /mercy lock when you're done.")
   elseif lower == "reset" then
     M.Groups:ResetPositions()
   elseif cmd == "test" then
@@ -301,7 +309,7 @@ end
 local function onClick(button)
   if button == "RightButton" then
     M:SetLocked(not M.db.locked)
-    M:Print(M.db.locked and "Frames locked." or "Frames unlocked: drag a group by its label.")
+    M:Print(M.db.locked and "Frames locked." or "Frames unlocked: drag a group by its name.")
   else
     M:OpenSettings()
   end
