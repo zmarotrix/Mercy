@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6, 2026-11-07
+
+- The spells tooltip follows the keys you hold, as HealersMate's does: it shows the binds for Shift, Ctrl, Alt or none, every button
+  with "Unbound" where there's nothing, and redraws the moment you press or let go of a modifier.
+- Mouse buttons 4 and 5 are called Back and Forward.
+
 ## 0.1.5, 2026-11-07
 
 Softer and rounded, closer to HealersMate (0.1.4's flat look went the wrong way, and its outlined text read as a border):

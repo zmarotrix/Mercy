@@ -25,8 +25,8 @@ Binds.BUTTONS = {
   { key = "Left", suffix = "1", click = "LeftButton", label = "Left" },
   { key = "Right", suffix = "2", click = "RightButton", label = "Right" },
   { key = "Middle", suffix = "3", click = "MiddleButton", label = "Middle" },
-  { key = "Button4", suffix = "4", click = "Button4", label = "Button 4" },
-  { key = "Button5", suffix = "5", click = "Button5", label = "Button 5" },
+  { key = "Button4", suffix = "4", click = "Button4", label = "Back" },        -- the side buttons, as most mice name them
+  { key = "Button5", suffix = "5", click = "Button5", label = "Forward" },
 }
 Binds.SETS = { "friendly", "hostile" }
 Binds.SPECIAL = { "Target", "Assist", "Focus", "Context", "Follow", "Role", "Role: Tank", "Role: Healer", "Role: Damage", "Role: None" }

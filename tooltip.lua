@@ -23,10 +23,14 @@ local function manaCost(spell)
   end
 end
 
+---The binds for the modifier you're holding: every button, "Unbound" where there's nothing, redrawn as soon as you press or
+---let go of Shift, Ctrl or Alt (as HealersMate's tooltip does).
 function Tooltip:Show(b)
   if not (M.db.spellsTooltip or M.db.unitTooltip) then return end
+  self.owner = b
   local tt = GameTooltip
   tt:SetOwner(b, "ANCHOR_RIGHT")
+  tt:ClearLines()
   local hostile = false
   if b.fake then
     tt:AddLine(b.fake.name, 1, 1, 1)
@@ -39,23 +43,38 @@ function Tooltip:Show(b)
     hostile = M.Plain(UnitCanAttack, "player", b.unit) == true
   end
   if M.db.spellsTooltip then
+    local set = hostile and "hostile" or "friendly"
+    local mod = M.Binds.ModKey()
+    local label = "No modifier"
+    for _, m in ipairs(M.Binds.MODS) do if m.key == mod then label = m.label end end
+    tt:AddDoubleLine(hostile and "Hostile binds" or "Binds", label, M.ACCENT[1], M.ACCENT[2], M.ACCENT[3], 0.66, 0.63, 0.54)
     local mana = M.Plain(UnitPower, "player", 0)
-    tt:AddLine(hostile and "Your hostile binds" or "Your binds", M.ACCENT[1], M.ACCENT[2], M.ACCENT[3])
-    local list = M.Binds:List(hostile and "hostile" or "friendly")
-    if #list == 0 then tt:AddLine("None yet: /mercy binds", 0.66, 0.63, 0.54) end
-    for _, row in ipairs(list) do
-      local right = row.text
-      local cost = row.action.isSpell and manaCost(row.action.spell)
-      if cost and cost > 0 and mana then
-        local casts = math.floor(mana / cost)
-        right = right .. (casts <= LOW and "  |cffff9a6a" or "  |cffa8a08a") .. casts .. "|r"
+    for _, button in ipairs(M.Binds.BUTTONS) do
+      local text = M.Binds:Get(set, mod, button.key)
+      local action = M.Binds.Parse(text)
+      if action then
+        local right = text
+        local cost = action.isSpell and manaCost(action.spell)
+        if cost and cost > 0 and mana then
+          local casts = math.floor(mana / cost)
+          right = right .. (casts <= LOW and "  |cffff9a6a" or "  |cffa8a08a") .. casts .. "|r"
+        end
+        tt:AddDoubleLine(button.label, right, 1, 0.82, 0, 1, 1, 1)
+      else
+        tt:AddDoubleLine(button.label, "Unbound", 1, 0.82, 0, 0.43, 0.4, 0.32)
       end
-      tt:AddDoubleLine(row.key, right, 1, 0.82, 0, 1, 1, 1)
     end
+    if mod == "none" then tt:AddLine("Hold Shift, Ctrl or Alt for more", 0.43, 0.4, 0.32) end
   end
   tt:Show()
 end
 
 function Tooltip:Hide()
+  self.owner = nil
   GameTooltip:Hide()
 end
+
+Core:On("MODIFIER_STATE_CHANGED", Tooltip, function()
+  local b = Tooltip.owner
+  if b and GameTooltip:IsShown() and GameTooltip:GetOwner() == b then Tooltip:Show(b) end
+end)
