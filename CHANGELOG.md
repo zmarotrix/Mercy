@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.6, 2026-11-08
+
+- Fixed an error placing the role icon when the game hides a name from add-ons (the Target frame): the icons now
+  hang off the name's edges without measuring it.
+
 ## 0.3.5, 2026-11-08
 
 - Incoming heals stand apart from the green health bar: your own heals are a pale near-white, everyone else's a muted teal.

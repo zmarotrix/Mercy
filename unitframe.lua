@@ -356,7 +356,8 @@ function UF:ApplyLayout(b, key)
   local twoLines = key ~= "tiny"
   b.name:SetFontObject(UI.Font("bold", L.font))
   -- room either side of the name for the role icon and raid mark (PlaceIcons); the corners are the game's, for aura icons
-  b.name:SetWidth(L.w - 10 - (key ~= "tiny" and 28 or 0))
+  b.nameBox = L.w - 10 - (key ~= "tiny" and 28 or 0)
+  b.name:SetWidth(b.nameBox)
   b.value:SetFontObject(UI.Font("bold", L.font - 1))
   b.status:SetFontObject(UI.Font("body", L.font - 1))
   b.name:ClearAllPoints()
@@ -428,17 +429,24 @@ function UF:UpdateName(b)
 end
 
 ---The role icon just left of the name and the raid mark just right of it, where they can't sit under the game's aura icons.
----Placed from the name's drawn width; if that can't be read (secret), they go by the edges of the name's box.
+---A plain name is measured and cut to its box. A secret one (the game hides some units' names from add-ons, and then its
+---width too) can't be measured, so it sizes itself to its text and the icons hang off its edges: no number is read.
 function UF:PlaceIcons(b)
-  local box = b.name:GetWidth() or 0
+  local box = b.nameBox or 0
   local ok, w = pcall(b.name.GetStringWidth, b.name)
-  if not ok then w = nil end
-  if type(w) ~= "number" or (issecretvalue and issecretvalue(w)) or w > box then w = box end
-  local half = math.floor(w / 2 + 0.5)
+  local plain = ok and type(w) == "number" and not (issecretvalue and issecretvalue(w))
   b.role:ClearAllPoints()
-  b.role:SetPoint("RIGHT", b.name, "CENTER", -half - 2, 0)
   b.raidIcon:ClearAllPoints()
-  b.raidIcon:SetPoint("LEFT", b.name, "CENTER", half + 2, 0)
+  if plain then
+    b.name:SetWidth(box)
+    local half = math.floor(math.min(w, box) / 2 + 0.5)
+    b.role:SetPoint("RIGHT", b.name, "CENTER", -half - 2, 0)
+    b.raidIcon:SetPoint("LEFT", b.name, "CENTER", half + 2, 0)
+  else
+    b.name:SetWidth(0)
+    b.role:SetPoint("RIGHT", b.name, "LEFT", -2, 0)
+    b.raidIcon:SetPoint("LEFT", b.name, "RIGHT", 2, 0)
+  end
 end
 
 function UF:UpdateColor(b)
