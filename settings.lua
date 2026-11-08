@@ -283,8 +283,10 @@ end
 Settings.panes.indicators = function(parent)
   local list = UI.SettingsList(parent)
   list:Header("Debuffs you can remove")
-  list:Dropdown("Highlight", "How a frame lights up when it has a debuff you can remove. Works in combat.",
-    { { "mercy", "Mercy" }, { "blizzard", "Blizzard style" } }, opt("highlight"))
+  list:Dropdown("Highlight", "How a frame lights up when it has a debuff you can remove. Blizzard style is the game's own raid frame display, "
+    .. "drawn by the game on Mercy's frames, and works in combat. Mercy's border is out of combat only (add-ons can't read auras in combat), "
+    .. "so in combat Blizzard's takes over either way.",
+    { { "blizzard", "Blizzard style" }, { "mercy", "Mercy's border" } }, opt("highlight"))
   list:Dropdown("Show", "\"Anything\" also lights debuffs someone else in your group can remove: for raid leaders.",
     { { "mine", "Only mine" }, { "any", "Anything dispellable" } }, opt("dispelScope"))
   list:Toggle("Debuff icons", "In combat Blizzard's own code draws them on our frames, with boss mechanics add-ons can't see.", opt("debuffIcons"))

@@ -55,7 +55,10 @@ end
 ---overlay, drawn by the game's own code on our frames, takes over. Likewise if the count can't be read for any other reason.
 local UNREADABLE = { secret = true, error = true, combat = true }
 function Auras:Effective()
-  if M.db.highlight == "mercy" and UNREADABLE[self.countState or ""] and self.containerState == "working" then return "blizzard" end
+  local working = self.containerState == "working"
+  if M.db.highlight == "mercy" and UNREADABLE[self.countState or ""] and working then return "blizzard" end
+  -- Blizzard style needs the game to draw on our frames; if it refused, Mercy's own border stands in (out of combat)
+  if M.db.highlight == "blizzard" and self.containerState and not working then return "mercy" end
   return M.db.highlight
 end
 

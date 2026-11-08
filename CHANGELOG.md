@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.14, 2026-11-07
+
+- **The game's own raid frame dispel display is the default, in and out of combat:** the gradient, border and type icon the default
+  raid frames show, drawn by the game on Mercy's frames. It looks the same before and during a fight. Saves move to it once.
+- Mercy's own border is still a setting (Highlight: Mercy's border), now steady rather than pulsing, and out of combat only. If the game
+  ever refuses to draw on Mercy's frames, Mercy's border stands in.
+
 ## 0.2.13, 2026-11-07
 
 - **Fixed:** a pale bar could stay after the health fill when nobody was healing. Incoming heals and absorbs only redrew when the game

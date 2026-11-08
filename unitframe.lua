@@ -142,16 +142,7 @@ local function makeHighlight(parent)
   end
   parts[#parts + 1] = glow
   hl.parts = parts
-  local ag = hl.CreateAnimationGroup and hl:CreateAnimationGroup()
-  if ag then
-    ag:SetLooping("BOUNCE")
-    local a = ag:CreateAnimation("Alpha")
-    if a then
-      a:SetFromAlpha(1) a:SetToAlpha(0.55) a:SetDuration(0.7)
-      hl:SetScript("OnShow", function() ag:Play() end)
-      hl:SetScript("OnHide", function() ag:Stop() end)
-    end
-  end
+  -- steady, not pulsing: the game's own raid frames don't flash a dispel either
   function hl:SetColor(r, g, b)
     for _, t in ipairs(parts) do t:SetVertexColor(r, g, b, 1) end
   end

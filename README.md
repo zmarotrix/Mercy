@@ -22,10 +22,10 @@ Standard, Compact, Wide, Tiny and Classic. Health in class colour, green, or gre
 Out of range fades.
 
 ### Debuffs you can remove
-A frame with a debuff your class removes gets a pulsing border in that debuff's colour. **In combat** this client won't let any add-on
-read auras, so the game's own dispel overlay takes over on Mercy's frames, drawn by the game's code, and Mercy's border comes back when
-combat ends. Prefer the game's look all the time? **Blizzard style** uses it out of combat too. Raid leaders can show anything someone in the
-group can remove.
+A frame with a debuff your class removes lights up with the game's own raid frame dispel display (a gradient and border in the
+debuff's colour, and its type icon), drawn by the game's code on Mercy's frames, so it works in combat too. Prefer a plain coloured border?
+**Mercy's border** is a setting, out of combat only (this client won't let add-ons read auras in combat, so the game's display takes over
+then). Raid leaders can show anything someone in the group can remove.
 
 Debuff icons in combat are drawn by the game's own code on Mercy's frames, with bigger icons for boss debuffs and the boss mechanics
 add-ons can never see.

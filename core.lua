@@ -102,7 +102,7 @@ M.DEFAULTS = {
   range = true,
   rangeAlpha = 0.4,
   lowHealth = true,                 -- red pulse below 25%
-  highlight = "mercy",              -- mercy (our border) or blizzard (the game's overlay)
+  highlight = "blizzard",           -- blizzard (the game's raid frame dispel display, works in combat) or mercy (our border)
   dispelScope = "mine",             -- mine (HARMFUL|RAID) or any (HARMFUL|RAID_PLAYER_DISPELLABLE)
   debuffIcons = true,
   myBuffs = true,                   -- your buffs and HoTs on people
@@ -181,6 +181,11 @@ function M:InitDB()
   if self.db.schema < 6 then
     self.db.hideBlizzard = false
     self.db.schema = 6
+  end
+  -- 0.2.14: the game's own dispel display is the default, in and out of combat (Mercy's border was only ever the default)
+  if self.db.schema < 7 then
+    self.db.highlight = "blizzard"
+    self.db.schema = 7
   end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")
