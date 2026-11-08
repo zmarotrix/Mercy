@@ -135,7 +135,7 @@ function Auras:ContainerAttributes(b)
   local size = b.iconSize or 14
   local groups = rawget(_G, "CompactRaidGroupTypeEnum")
   return {
-    ["max-buffs"] = buffs, ["max-debuffs"] = icons, ["max-dispel-debuffs"] = blizz and 3 or 0,
+    ["max-buffs"] = buffs, ["max-debuffs"] = icons, ["max-dispel-debuffs"] = 0,   -- the game's row of type icons sat under the role icon; the debuff icons already show each type
     ["aura-organization-type"] = enum("RaidAuraOrganizationType", "BuffsRightDebuffsLeft", 2),
     ["display-only-dispellable-debuffs"] = false,
     ["ignore-buffs"] = buffs == 0, ["ignore-debuffs"] = icons == 0, ["ignore-dispel-debuffs"] = false,

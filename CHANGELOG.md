@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3, 2026-11-08
+
+- The game's extra row of dispel-type icons is off: it sat under the role icon, top left. A dispellable debuff still
+  lights the frame's border, and the debuff icons (bottom left) show each debuff with its type's colour.
+
 ## 0.3.2, 2026-11-07
 
 - The HealersMate tab only shows when HealersMate is installed (on or off). Without it, `/mercy import HM2|...`
