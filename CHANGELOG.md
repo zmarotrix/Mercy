@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.10, 2026-11-08
+
+- Letting go of a group you started dragging just before combat no longer trips "blocked action": the drop finishes
+  when combat ends.
+
 ## 0.3.9, 2026-11-08
 
 - The minimap list shows Mercy's role, "Healing frames", instead of whether the frames are locked.

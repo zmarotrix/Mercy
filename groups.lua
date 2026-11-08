@@ -64,14 +64,20 @@ local function makeLabel(g, key)
   label:RegisterForDrag("LeftButton")
   label:SetScript("OnDragStart", function()
     if M.InCombat() or not Groups:CanDrag() then return end
+    g.moving = true
     g:StartMoving()
   end)
-  label:SetScript("OnDragStop", function()
+  -- A drag let go after combat began can't stop the secure frame now: it finishes when combat ends
+  local function stopMoving()
+    if not g.moving then return end
+    if M.InCombat() then return Core:AfterCombat(stopMoving) end
+    g.moving = nil
     g:StopMovingOrSizing()
     local point, _, _, x, y = g:GetPoint()
     local saved = M:Group(key)
     saved.point, saved.x, saved.y = point or "CENTER", x or 0, y or 0
-  end)
+  end
+  label:SetScript("OnDragStop", stopMoving)
   label:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_TOP")
     GameTooltip:AddLine(Groups.DEFS[key].label, 1, 1, 1)
