@@ -1,4 +1,4 @@
--- Mercy's settings window (design/suite/mercy.html): Frames, Click-casting, Indicators and HealersMate. /mercy
+-- Mercy's settings window (design/suite/mercy.html): Frames, Click-casting, Indicators, Buffs, and HealersMate when it's installed. /mercy
 -- A small page under NorgannonDB in the game's Settings opens it too.
 
 local Core = NorgannonCore
@@ -12,7 +12,15 @@ M.Settings = Settings
 
 local W, H = 640, 580
 local TABS = { { key = "frames", label = "Frames" }, { key = "binds", label = "Click-casting" },
-  { key = "indicators", label = "Indicators" }, { key = "buffs", label = "Buffs" }, { key = "healersmate", label = "HealersMate" } }
+  { key = "indicators", label = "Indicators" }, { key = "buffs", label = "Buffs" } }
+
+---The window's tabs: HealersMate's (bringing its binds over) only when HealersMate is installed.
+function Settings.Tabs()
+  local tabs = {}
+  for i, t in ipairs(TABS) do tabs[i] = t end
+  if M.Import and M.Import:Installed() then tabs[#tabs + 1] = { key = "healersmate", label = "HealersMate" } end
+  return tabs
+end
 
 local win
 
@@ -469,7 +477,8 @@ local function build()
   win:SetAccent("mercy")
   win:Hide()
   Settings.built = {}
-  win.tabs = UI.Tabs(win.body, TABS, function(key) Settings.tab = key show(key) end)
+  Settings.hasHealersMate = M.Import and M.Import:Installed()
+  win.tabs = UI.Tabs(win.body, Settings.Tabs(), function(key) Settings.tab = key show(key) end)
   win.tabs:SetPoint("TOPLEFT")
   win.tabs:SetPoint("TOPRIGHT")
   win.tabs:ApplyAccent(UI.Accent("mercy"))
@@ -482,6 +491,10 @@ end
 function Settings:Open(tab)
   if not M.db then return end
   if not win then build() end
+  if tab == "healersmate" and not self.hasHealersMate then
+    M:Print("HealersMate isn't installed, so there's nothing to bring over. A HealersMate export string still works: /mercy import HM2|...")
+    tab = nil
+  end
   if tab and self.panes[tab] then self.tab = tab end
   self.tab = self.tab or "frames"
   win.tabs:Select(self.tab, true)
@@ -511,7 +524,7 @@ Core:OnLogin(function()
   page:Hide()
   local list = UI.SettingsList(page)
   list:Header("Mercy")
-  list:Buttons("Settings", "Mercy's own window: frames, click-casting, indicators and HealersMate.", { { "Open", function() M:OpenSettings() end } })
+  list:Buttons("Settings", "Mercy's own window: frames, click-casting, indicators and buffs.", { { "Open", function() M:OpenSettings() end } })
   page:SetScript("OnShow", function() list:Refresh() end)
   M:AddSettingsPage(page)
 

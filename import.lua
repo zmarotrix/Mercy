@@ -23,6 +23,17 @@ function Import:Loaded()
   return fn and M.Plain(fn, "HealersMate") == true or false
 end
 
+---Is HealersMate in the AddOns folder, on or off for this character? The HealersMate tab shows only then.
+function Import:Installed()
+  if self:Loaded() then return true end
+  local exists = M.Fn("C_AddOns", "DoesAddOnExist")
+  if exists then return M.Plain(exists, "HealersMate") == true end
+  local info = M.Fn("C_AddOns", "GetAddOnInfo") or M.Fn(nil, "GetAddOnInfo")
+  if not info then return false end
+  local ok, name, _, _, _, reason = pcall(info, "HealersMate")
+  return ok and name ~= nil and reason ~= "MISSING"
+end
+
 local function saved()
   local char, account = rawget(_G, "HealersMateCharDB"), rawget(_G, "HealersMateDB")
   return type(char) == "table" and char or nil, type(account) == "table" and account or nil

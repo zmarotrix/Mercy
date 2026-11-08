@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2, 2026-11-07
+
+- The HealersMate tab only shows when HealersMate is installed (on or off). Without it, `/mercy import HM2|...`
+  still takes an export string.
+
 ## 0.3.1, 2026-11-07
 
 - The text boxes in Mercy's settings (click-casting, Add a buff, the HealersMate import) are the suite's own, not
