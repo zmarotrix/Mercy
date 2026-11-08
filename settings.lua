@@ -101,6 +101,17 @@ Settings.panes.binds = function(parent)
     box:SetPoint("LEFT", label, "RIGHT", 10, 0)
     box:SetAutoFocus(false)
     box:SetFontObject(UI.Font("body", 13))
+    -- the spell's icon inside the box, as HealersMate shows it, and a soft red for a name that matches nothing you have
+    box:SetTextInsets(22, 4, 0, 0)
+    box.icon = box:CreateTexture(nil, "OVERLAY")
+    box.icon:SetSize(18, 18)
+    box.icon:SetPoint("LEFT", box, "LEFT", 0, 0)
+    box.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    box:SetScript("OnTextChanged", function(self)
+      local icon, ok = M.Binds.Icon(self:GetText())
+      if icon then self.icon:SetTexture(icon) self.icon:Show() else self.icon:Hide() end
+      if ok then self:SetTextColor(1, 1, 1) else self:SetTextColor(1, 0.55, 0.5) end
+    end)
     local function save(self)
       local text = self:GetText()
       if text ~= (M.Binds:Get(pane.set, pane.mod, b.key) or "") then

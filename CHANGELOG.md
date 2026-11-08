@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.8, 2026-11-07
+
+- The click-casting boxes show the spell's icon (or the item's or macro's) as soon as the text matches something you have, as
+  HealersMate does. A name that matches nothing in your spellbook turns soft red, so a typo shows before you need it.
+
 ## 0.1.7, 2026-11-07
 
 - **Rounded bars:** each layout ships masks the shape of its bars (`media/`, made by `tools/mercy_masks.py`), so health, incoming heals,

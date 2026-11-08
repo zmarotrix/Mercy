@@ -121,6 +121,27 @@ function Binds.Parse(text)
   return { type = "spell", spell = text, label = text, isSpell = true }
 end
 
+---What a bind's text looks like: its icon (nil if none), and whether it matches something you have.
+---Spells come from your spellbook, items by name, macros from your macro list; Target, Context and the like have no icon.
+function Binds.Icon(text)
+  local a = Binds.Parse(text)
+  if not a then return nil, true end
+  if a.isSpell then
+    local info = M.Plain(M.Fn("C_Spell", "GetSpellInfo"), (a.spell:gsub("%s*%(.-%)%s*$", "")))
+    if type(info) == "table" then return info.iconID or info.originalIconID, true end
+    return nil, false
+  end
+  if a.item then
+    local id, _, _, _, icon = M.Plain(M.Fn("C_Item", "GetItemInfoInstant"), a.item)
+    return icon, id ~= nil
+  end
+  if a.macro then
+    local name, icon = M.Plain(M.Fn(nil, "GetMacroInfo"), a.macro)
+    return icon, name ~= nil
+  end
+  return nil, true
+end
+
 ---The resurrection spell you know, or nil.
 function Binds:ResSpell()
   local spell = self.RES[M.class or M.PlayerClass() or ""]
