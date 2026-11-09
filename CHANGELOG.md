@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.12, 2026-11-08
+
+- Fixed Target (and Assist and Focus) binds doing nothing: on Forever the game's own targeting action does nothing from
+  a frame, so these, like spells, Buff and item binds, now go out as one-line macros naming the person (`/target party1`).
+
 ## 0.3.11, 2026-11-08
 
 - `/mercy clicks` reports what each click on a frame did: the keys held, the action, the unit, and your target after.

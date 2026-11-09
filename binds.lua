@@ -273,11 +273,18 @@ local function spellMacro(spell, unit, res, target)
   return table.concat(lines, "\n")
 end
 
+-- On WoW Forever the game's own secure "target", "assist" and "focus" actions do nothing from a unit frame (seen with
+-- /mercy clicks: the click picked "target" on party1 and the target stayed empty), while macros work. So those, and
+-- spells and items, go out as one-line macros naming the unit.
+local UNIT_MACRO = { target = "/target %s", assist = "/assist %s", focus = "/focus %s" }
+
 ---The attributes for one button, as a table (also what the harness checks).
 function Binds:Attributes(unit, button)
+  local targetText = UNIT_MACRO.target:format(unit)
   local attrs = {
-    ["*type1"] = "target", ["*type2"] = "togglemenu",                    -- an unbound click still does something sensible
-    ["*type-hostile1"] = "target", ["*type-hostile2"] = "togglemenu",
+    -- an unbound click still does something sensible
+    ["*type1"] = "macro", ["*macrotext1"] = targetText, ["*type2"] = "togglemenu",
+    ["*type-hostile1"] = "macro", ["*macrotext-hostile1"] = targetText, ["*type-hostile2"] = "togglemenu",
     useOnKeyDown = M.db.castOn == "down",
   }
   for _, b in ipairs(self.BUTTONS) do attrs["*harmbutton" .. b.suffix] = "hostile" .. b.suffix end
@@ -296,11 +303,18 @@ function Binds:Attributes(unit, button)
           if a.buff then
             -- the buff this person is missing from you, worked out out of combat (Buffs:Scan); nothing to do if they need none
             local spell = button and button.buffSpell
-            attrs[p .. "type" .. suffix] = spell and "spell" or "noop"
-            attrs[p .. "spell" .. suffix] = spell
-          elseif a.isSpell and set == "friendly" and (res or M.db.autoTarget) then
+            attrs[p .. "type" .. suffix] = spell and "macro" or "noop"
+            attrs[p .. "macrotext" .. suffix] = spell and spellMacro(spell, unit) or nil
+          elseif a.isSpell then
+            local friendly = set == "friendly"
             attrs[p .. "type" .. suffix] = "macro"
-            attrs[p .. "macrotext" .. suffix] = spellMacro(a.spell, unit, res, M.db.autoTarget)
+            attrs[p .. "macrotext" .. suffix] = spellMacro(a.spell, unit, friendly and res or nil, friendly and M.db.autoTarget)
+          elseif UNIT_MACRO[a.type] then
+            attrs[p .. "type" .. suffix] = "macro"
+            attrs[p .. "macrotext" .. suffix] = UNIT_MACRO[a.type]:format(unit)
+          elseif a.item then
+            attrs[p .. "type" .. suffix] = "macro"
+            attrs[p .. "macrotext" .. suffix] = ("/use [@%s] %s"):format(unit, a.item)
           elseif a.follow then
             attrs[p .. "type" .. suffix] = "macro"
             attrs[p .. "macrotext" .. suffix] = "/follow " .. unit
