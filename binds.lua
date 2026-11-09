@@ -373,7 +373,20 @@ local function modKey()
 end
 Binds.ModKey = modKey
 
+---/mercy clicks: what the game made of a click, read after the secure click ran.
+local function reportClick(button, mouse, down)
+  local get = rawget(_G, "SecureButton_GetModifiedAttribute")
+  local prefix = rawget(_G, "SecureButton_GetModifierPrefix")
+  local eff = rawget(_G, "SecureButton_GetEffectiveButton")
+  local b = eff and eff(button, mouse) or mouse
+  local kind = get and get(button, "type", b)
+  local target = M.Plain(UnitName, "target")
+  M:Print(("click %s %s, keys %q, button %s, does %s on %s; your target now: %s"):format(tostring(mouse), down and "down" or "up",
+    prefix and prefix(button) or "?", tostring(b), tostring(kind), tostring(button:GetAttribute("unit")), tostring(target)))
+end
+
 function Binds:PostClick(button, mouse, down)
+  if M.debugClicks then reportClick(button, mouse, down) end
   if down then return end
   local suffix
   for _, b in ipairs(self.BUTTONS) do if b.click == mouse then suffix = b.key end end

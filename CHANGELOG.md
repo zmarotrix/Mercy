@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.11, 2026-11-08
+
+- `/mercy clicks` reports what each click on a frame did: the keys held, the action, the unit, and your target after.
+
 ## 0.3.10, 2026-11-08
 
 - Letting go of a group you started dragging just before combat no longer trips "blocked action": the drop finishes
