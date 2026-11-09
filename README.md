@@ -1,4 +1,8 @@
 <p align="center">
+  <img src=".github/banner.png" alt="Mercy: Understand your whole group at a glance, and heal faster. Powered by Norgannon." width="100%">
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/WoW%20Forever-1.60.1-e7c66c?style=flat-square" alt="WoW Forever 1.60.1">
   <img src="https://img.shields.io/badge/status-not%20yet%20played%20in%20game-ffeea0?style=flat-square" alt="Status: not yet played in game">
   <img src="https://img.shields.io/badge/part%20of-NorgannonDB%20suite-2b2333?style=flat-square" alt="Part of the NorgannonDB suite">
