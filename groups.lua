@@ -1,8 +1,9 @@
 -- The groups: party, raid, tanks, pets, target and focus. Each is a secure frame holding fixed unit buttons.
 --
 -- Which group shows is a state driver ([group:raid] show; hide), which the game runs securely, in combat too.
--- Which button sits where (sorting, raid groups, tanks) is decided out of combat; a roster change in combat is
--- placed properly when it ends. Someone joining mid-fight still appears, because their button's unit watch shows it.
+-- Which button sits where (sorting, raid groups, tanks) is decided out of combat. In combat, when the game's unit
+-- watch shows or hides a button (someone joins or leaves), a secure snippet closes the gap: the buttons keep the
+-- out-of-combat order, shown ones packed up in each column. The full sort runs again when combat ends.
 
 local Core = NorgannonCore
 local M = Mercy
@@ -41,6 +42,29 @@ function Groups:Driver(key)
   if M.db.friendlyOnly and (key == "target" or key == "focus") then return "[@" .. key .. ",help] show; hide" end
   return "show"
 end
+
+---Restricted code, run by the game on a button's OnShow and OnHide (in combat too). It reads the slot order and cell
+---size Groups:Arrange left on the group and packs the shown buttons up, column by column.
+Groups.RELAYOUT = [[
+  local g = owner or self:GetParent()
+  if not g then return end
+  local n = g:GetAttribute("mercy-n") or 0
+  local w = g:GetAttribute("mercy-w") or 0
+  local h = g:GetAttribute("mercy-h") or 0
+  local gap = g:GetAttribute("mercy-gap") or 0
+  local rows = newtable()
+  for i = 1, n do
+    local b = g:GetFrameRef("mercy-slot" .. i)
+    if b and b:IsShown() then
+      local col = b:GetAttribute("mercy-col") or 0
+      local r = rows[col] or 0
+      b:ClearAllPoints()
+      b:SetPoint("TOPLEFT", g, "TOPLEFT", col * (w + gap), -r * (h + gap))
+      b:SetAttribute("mercy-row", r)
+      rows[col] = r + 1
+    end
+  end
+]]
 
 function Groups:Buttons()
   return self.buttons
@@ -120,6 +144,11 @@ function Groups:BuildGroup(key)
   for i, unit in ipairs(units) do
     local b = M.UF:Create(g, unit, "MercyUnit_" .. key .. i)
     b.group = key
+    -- someone joining or leaving in combat: the game runs RELAYOUT, so no gap opens and no frame lands on another
+    if #units > 1 and SecureHandlerWrapScript then
+      SecureHandlerWrapScript(b, "OnShow", g, self.RELAYOUT)
+      SecureHandlerWrapScript(b, "OnHide", g, self.RELAYOUT)
+    end
     -- the panel follows who's there: it isn't protected, so it can resize in combat when the game shows or hides a frame
     -- the game shows a frame when its unit appears, which can be after our last full redraw (at login most of all): draw it then
     b:HookScript("OnShow", function(self)
@@ -206,8 +235,26 @@ end
 
 local function place(g, b, col, row, L)
   b.col, b.row = col, row
+  b:SetAttribute("mercy-col", col)
+  b:SetAttribute("mercy-row", row)
   b:ClearAllPoints()
   b:SetPoint("TOPLEFT", g, "TOPLEFT", col * (L.w + GAP), -row * (L.h + GAP))
+end
+
+---Leaves the order and cell size on the group for RELAYOUT: slots in column order, then row.
+function Groups:Arrange(g, L)
+  if not g.SetFrameRef then return end
+  local list = {}
+  for i, b in ipairs(g.buttons) do list[i] = b end
+  table.sort(list, function(a, c)
+    if a.col ~= c.col then return (a.col or 0) < (c.col or 0) end
+    return (a.row or 0) < (c.row or 0)
+  end)
+  for i, b in ipairs(list) do g:SetFrameRef("mercy-slot" .. i, b) end
+  g:SetAttribute("mercy-n", #list)
+  g:SetAttribute("mercy-w", L.w)
+  g:SetAttribute("mercy-h", L.h)
+  g:SetAttribute("mercy-gap", GAP)
 end
 
 function Groups:LayoutGroup(g)
@@ -243,6 +290,7 @@ function Groups:LayoutGroup(g)
   end
   g:SetSize(math.max(cols * (L.w + GAP) - GAP, 10), math.max(rows * (L.h + GAP) - GAP, 10))
   g.cell = L
+  self:Arrange(g, L)
   self:FitPanel(g)
 end
 
@@ -346,8 +394,10 @@ function Groups:FitPanel(g)
   local cols, rows = 0, 0
   for _, b in ipairs(g.buttons) do
     if b.col and (b:IsShown() or b.fake) then
+      -- the row RELAYOUT gave it in combat, if it moved it since the last layout
+      local row = tonumber(b:GetAttribute("mercy-row")) or b.row
       cols = math.max(cols, b.col + 1)
-      rows = math.max(rows, b.row + 1)
+      rows = math.max(rows, row + 1)
     end
   end
   local empty = rows == 0

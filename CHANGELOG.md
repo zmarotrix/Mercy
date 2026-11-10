@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.13, 2026-11-09
+
+- Fixed frames leaving a gap or sitting on top of each other when someone joins or leaves the group in combat. The game
+  now closes the gap itself as frames show and hide, keeping the order they had, and the panel grows or shrinks to
+  match. The full sort (by role, class or name) runs again when combat ends.
+
 ## 0.3.12, 2026-11-08
 
 - Fixed Target (and Assist and Focus) binds doing nothing: on Forever the game's own targeting action does nothing from
