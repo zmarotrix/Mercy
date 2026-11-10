@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.14 (2026-11-09)
+
+- Asks for Norgannon Core 1.26 or newer, the first Core with everything it uses. An older Core now gets a clear "update Norgannon Core" message instead of errors.
+
 ## 0.3.13, 2026-11-09
 
 - Fixed frames leaving a gap or sitting on top of each other when someone joins or leaves the group in combat. The game

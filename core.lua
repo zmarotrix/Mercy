@@ -12,7 +12,7 @@ local Core = NorgannonCore
 
 if not (Core and Core.NewAddon) then
   Mercy = { disabled = true }
-  print("Mercy needs NorgannonDB Core 1.20 or newer; it is turned off.")
+  print("Mercy needs NorgannonDB Core 1.26 or newer; it is turned off.")
   return
 end
 
@@ -23,7 +23,7 @@ local M = Mercy
 -- no main window: a click or right-click opens its settings window, and Shift-click locks or unlocks the frames.
 -- Its saved data stays its own (M:InitDB), because of the schema steps below.
 Core:NewAddon("mercy", {
-  folder = ADDON, api = { 1, 20 },
+  folder = ADDON, api = { 1, 26 },
   slash = { "/mercy" },
   commands = {
     binds = { function() M:OpenSettings("binds") end, "the click-casting tab" },
