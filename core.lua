@@ -12,7 +12,7 @@ local Core = NorgannonCore
 
 if not (Core and Core.NewAddon) then
   Mercy = { disabled = true }
-  print("Mercy needs NorgannonDB Core 1.26 or newer; it is turned off.")
+  print("Mercy needs Norgannon Core 1.26 or newer; it is turned off.")
   return
 end
 
