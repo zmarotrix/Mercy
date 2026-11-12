@@ -87,8 +87,10 @@ function Auras:UpdateHighlight(b)
   local hl = b.highlight
   if not hl then return end
   if b.fake then
+    -- test mode stands in for both styles: Blizzard's overlay can't draw on invented players, so Mercy's border does,
+    -- for every dispellable type (the preview shows what the frames can do, whatever class you're on)
     local t = b.fake.dispel
-    if t and (M.db.dispelScope == "any" or (self.cures and self.cures[t])) and self:Effective() == "mercy" then
+    if t then
       hl:SetColor(M.Curves.TypeColor(t))
       hl:Show()
     else

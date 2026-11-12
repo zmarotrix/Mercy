@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.15 (2026-11-12)
+
+- Test mode shows debuffs fully in either dispel style: the invented players with a dispellable debuff get the coloured
+  border too (Blizzard's overlay can't draw on them), whatever your class can remove.
+
 ## 0.3.14 (2026-11-09)
 
 - Asks for Norgannon Core 1.26 or newer, the first Core with everything it uses. An older Core now gets a clear "update Norgannon Core" message instead of errors.
