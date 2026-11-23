@@ -235,6 +235,15 @@ function UF:Create(parent, unit, name)
   local after = b.incAll:GetStatusBarTexture() or b.incAll
   b.absorb:SetPoint("TOPLEFT", after, "TOPRIGHT")
   b.absorb:SetPoint("BOTTOMLEFT", after, "BOTTOMRIGHT")
+  -- overhealing on the way: the incoming heals again, unclipped by the bar, seen only through a thin window just right of it.
+  -- What spills past full health lights that edge amber. The game keeps health and heals secret, so this is drawn, not
+  -- counted: no number, and it shows heals being cast (yours and others'), not what landed.
+  b.overClip = CreateFrame("Frame", nil, b.content)
+  if b.overClip.SetClipsChildren then b.overClip:SetClipsChildren(true) end
+  b.overClip:SetFrameLevel(b.clip:GetFrameLevel() + 1)
+  b.over = statusbar(b.overClip, 1, 0.68, 0.2, 0.95, ART.health)
+  b.over:SetPoint("TOPLEFT", fill, "TOPRIGHT")
+  b.over:SetPoint("BOTTOMLEFT", fill, "BOTTOMRIGHT")
 
   b.power = statusbar(b.content, 0.3, 0.55, 1, 1, ART.power)
   b.powerBg = b.power:CreateTexture(nil, "BACKGROUND")
@@ -364,7 +373,12 @@ function UF:ApplyLayout(b, key)
   for _, m in ipairs(b.masks) do m:SetTexture(mask, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") end
   if showPower then b.powerMask:SetTexture(MEDIA .. "pmask-" .. key, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE") end
   local barWidth = L.w - PAD * 2
-  for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetWidth(barWidth) end
+  for _, s in ipairs({ b.incAll, b.incMine, b.absorb, b.over }) do s:SetWidth(barWidth) end
+  b.overClip:ClearAllPoints()
+  b.overClip:SetPoint("TOPLEFT", b.clip, "TOPRIGHT", 0, 0)
+  b.overClip:SetPoint("BOTTOMLEFT", b.clip, "BOTTOMRIGHT", 0, 0)
+  b.overClip:SetWidth(PAD + 1)
+  b.overClip:SetShown(M.db.overheal ~= false)
   -- the name and, under it, missing health or the status, centred on the bar
   local twoLines = key ~= "tiny"
   b.name:SetFontObject(UI.Font("bold", L.font))
@@ -477,8 +491,9 @@ function UF:UpdateHealth(b)
   if b.fake then
     local f = b.fake
     b.health:SetMinMaxValues(0, 100) b.health:SetValue(f.dead and 0 or f.hp)
-    for _, s in ipairs({ b.incAll, b.incMine, b.absorb }) do s:SetMinMaxValues(0, 100) end
+    for _, s in ipairs({ b.incAll, b.incMine, b.absorb, b.over }) do s:SetMinMaxValues(0, 100) end
     b.incAll:SetValue(f.inc or 0) b.incMine:SetValue(f.incMine or 0) b.absorb:SetValue(f.absorb or 0)
+    b.over:SetValue(f.dead and 0 or (f.inc or 0))
     b.flash:SetAlpha(M.db.lowHealth and not f.dead and f.hp < 25 and 1 or 0)
     if M.db.text == "none" or f.dead then b.value:SetText("")
     elseif M.db.text == "current" then b.value:SetFormattedText("%d", f.hp * 45)
@@ -492,7 +507,7 @@ function UF:UpdateHealth(b)
   local okH, hp = pcall(UnitHealth, unit)
   local okM, mx = pcall(UnitHealthMax, unit)
   if okH and okM then
-    for _, s in ipairs({ b.health, b.incAll, b.incMine, b.absorb }) do M.Set(s, "SetMinMaxValues", 0, mx) end
+    for _, s in ipairs({ b.health, b.incAll, b.incMine, b.absorb, b.over }) do M.Set(s, "SetMinMaxValues", 0, mx) end
     M.Set(b.health, "SetValue", hp)
   end
   if b.dead or b.offline then
@@ -555,10 +570,11 @@ function UF:UpdatePrediction(b)
     if not M.Set(bar, "SetValue", v) then bar:SetValue(0) end
   end
   if b.dead or b.offline then
-    b.incAll:SetValue(0) b.incMine:SetValue(0) b.absorb:SetValue(0)
+    b.incAll:SetValue(0) b.incMine:SetValue(0) b.absorb:SetValue(0) b.over:SetValue(0)
     return
   end
   value(b.incAll, UnitGetIncomingHeals, unit)
+  value(b.over, UnitGetIncomingHeals, unit)
   value(b.incMine, UnitGetIncomingHeals, unit, "player")
   value(b.absorb, UnitGetTotalAbsorbs, unit)
 end

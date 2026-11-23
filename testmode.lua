@@ -24,7 +24,7 @@ local function fake(i)
   local f = { name = NAMES[i] or ("Player" .. i), class = class, role = ROLES[class] or "DAMAGER",
     hp = 100 - ((i * 37) % 70), subgroup = math.ceil(i / 5), mana = 40 + (i * 13) % 60 }
   if class == "PALADIN" and i > 7 then f.role = "HEALER" end
-  f.inc = i % 3 == 0 and 12 or 0
+  f.inc = i % 3 == 0 and 12 or (f.hp >= 85 and 15 or 0)   -- a nearly full one with a heal on the way: the overheal edge
   f.incMine = i % 4 == 1 and 10 or 0
   f.absorb = i == 1 and 15 or 0
   f.far = i % 7 == 0

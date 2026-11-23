@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.20 (2026-11-23)
+
+- Overhealing: a thin amber edge lights right of someone's health bar when the heals on the way (yours and others') are
+  more than they're missing. The game hides health and heal numbers from add-ons, so it shows that there's overhealing
+  on the way, not how much, and not heals that already landed. Settings, Overhealing turns it off.
+
 ## 0.3.19 (2026-11-23)
 
 - Thorns and Fire Shield count for each other in buff reminders: they don't stack, so a tank wearing one isn't marked as

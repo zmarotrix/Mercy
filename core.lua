@@ -114,6 +114,7 @@ M.DEFAULTS = {
   downrank = true,                  -- buffs on someone too low for your best rank go down to one that lands
   maxBuffs = 3,
   maxDebuffs = 3,
+  overheal = true,                  -- an amber edge when incoming heals pass full health
   aggro = true,
   castOn = "up",                    -- up or down
   autoRes = true,
