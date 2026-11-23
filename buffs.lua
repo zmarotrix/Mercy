@@ -15,6 +15,7 @@ Buffs.counts = {}
 
 -- Rank 1 spell ids. Names come from the client, so they're in its language and match every rank.
 -- who: "all" players, "mana" users, "tanks". group: the party-wide version, cast when 3 or more in one party need it.
+-- sameAs: other buffs that take its place (they don't stack), so someone wearing one isn't told they miss the other.
 Buffs.LIST = {
   PRIEST = {
     { key = "fortitude", id = 1243, group = 21562, who = "all", on = true },
@@ -23,11 +24,11 @@ Buffs.LIST = {
   },
   DRUID = {
     { key = "wild", id = 1126, group = 21849, who = "all", on = true },
-    { key = "thorns", id = 467, who = "tanks", on = true },
+    { key = "thorns", id = 467, who = "tanks", on = true, sameAs = { 2947 } },   -- Fire Shield replaces Thorns: they don't stack
   },
   WARLOCK = {
     -- your imp's: tracked while an imp that knows it is out; the button and Buff binds cast it through the pet
-    { key = "fireshield", id = 2947, pet = true, who = "tanks", on = true },
+    { key = "fireshield", id = 2947, pet = true, who = "tanks", on = true, sameAs = { 467 } },   -- nor with Thorns
   },
   MAGE = {
     { key = "intellect", id = 1459, group = 23028, who = "mana", on = true },
@@ -103,6 +104,11 @@ function Buffs:All()
       -- groupName is for casting, so only when you know it; partyName is for reading, so someone else's Gift of the Wild
       -- counts as Mark of the Wild even before you've learned Gift yourself
       e.name, e.icon, e.groupName, e.partyName = name, icon, groupName and M.Knows(groupName) and groupName or nil, groupName
+      e.sameNames = {}
+      for _, id in ipairs(e.sameAs or {}) do
+        local n = spellInfo(id)
+        if n then e.sameNames[#e.sameNames + 1] = n end
+      end
       e.who, e.known = self:Who(base), true
       out[#out + 1] = e
     end
@@ -197,7 +203,10 @@ end
 ---The names that count as having this buff: itself and its group version (Mark of the Wild and Gift of the Wild).
 function Buffs:Names(e)
   if e.blessing then return e.names end
-  return { e.name, e.partyName }
+  local out = { e.name }
+  if e.partyName then out[#out + 1] = e.partyName end
+  for _, n in ipairs(e.sameNames or {}) do out[#out + 1] = n end
+  return out
 end
 
 ---"has", "expiring" or "missing" for one person and one buff; nil if it isn't theirs to have.

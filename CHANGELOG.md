@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.19 (2026-11-23)
+
+- Thorns and Fire Shield count for each other in buff reminders: they don't stack, so a tank wearing one isn't marked as
+  missing the other.
+
 ## 0.3.18 (2026-11-23)
 
 - Warlocks: your imp's Fire Shield is a tracked buff, for tanks by default, while an imp that knows it is out. The rebuff
