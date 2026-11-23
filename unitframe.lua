@@ -242,9 +242,22 @@ function UF:Create(parent, unit, name)
   b.overClip = CreateFrame("Frame", nil, b.content)
   if b.overClip.SetClipsChildren then b.overClip:SetClipsChildren(true) end
   b.overClip:SetFrameLevel(b.content:GetFrameLevel() + 3)
-  b.over = statusbar(b.overClip, 1, 0.68, 0.2, 0.9, ART.health)
-  b.over:SetPoint("TOPLEFT", fill, "TOPRIGHT")
-  b.over:SetPoint("BOTTOMLEFT", fill, "BOTTOMRIGHT")
+  b.over = statusbar(b.overClip, 1, 0.68, 0.2, 1, ART.health)
+  b.over:SetPoint("LEFT", fill, "RIGHT")
+  -- rounded ends: one mask rides the tail's own end, the other rounds it where the window cuts a long one off. Both are as
+  -- wide as the bar, so only their right ends ever show; the left end stays flush with the bar.
+  b.overMasks = {}
+  local overFill = b.over:GetStatusBarTexture() or b.over
+  for i, to in ipairs({ overFill, b.overClip }) do
+    local m = b.over:CreateMaskTexture()
+    m:SetPoint("RIGHT", to, "RIGHT")
+    if overFill.AddMaskTexture then overFill:AddMaskTexture(m) end
+    b.overMasks[i] = m
+  end
+  shade(b.over, b.overMasks[1], 0.3)
+  for _, t in ipairs(b.over.shade) do
+    if t.AddMaskTexture then t:AddMaskTexture(b.overMasks[2]) end
+  end
 
   b.power = statusbar(b.content, 0.3, 0.55, 1, 1, ART.power)
   b.powerBg = b.power:CreateTexture(nil, "BACKGROUND")
@@ -379,7 +392,15 @@ function UF:ApplyLayout(b, key)
   -- at most a quarter of a bar long, and a band a third of its height: the neighbour's health must still read round it
   b.overClip:SetPoint("LEFT", b.clip, "RIGHT", 0, 0)
   b.overClip:SetWidth(math.floor(barWidth / 4))
-  b.overClip:SetHeight(math.max(5, math.floor((L.h - PAD * 2 - (showPower and (L.power + 1) or 0)) / 3)))
+  local barHeight = L.h - PAD * 2 - (showPower and (L.power + 1) or 0)
+  local band = math.max(5, math.floor(barHeight / 3))
+  if (barHeight - band) % 2 == 1 then band = band + 1 end   -- centred on whole pixels
+  b.overClip:SetHeight(band)
+  b.over:SetHeight(band)
+  for _, m in ipairs(b.overMasks) do
+    m:SetSize(barWidth, band)
+    m:SetTexture(MEDIA .. "omask-" .. key .. (showPower and "-p" or "-n"), "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+  end
   b.overClip:SetShown(M.db.overheal ~= false)
   -- the name and, under it, missing health or the status, centred on the bar
   local twoLines = key ~= "tiny"

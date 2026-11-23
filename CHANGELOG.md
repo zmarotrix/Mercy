@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.22 (2026-11-23)
+
+- The overhealing tail has a rounded end and the same soft shading as the health bar.
+
 ## 0.3.21 (2026-11-23)
 
 - Overhealing runs past the end of the health bar as an amber tail, instead of a thin edge. It's the same scale as the bar,
