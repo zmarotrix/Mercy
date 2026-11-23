@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.16 (2026-11-23)
+
+- Mana bars show for everyone by default (Settings, Mana bar: Everyone). A setting you've already chosen is kept.
+- Buff reminders treat a buff and its group version as the same buff even before you've learned the group one: someone
+  wearing another druid's Gift of the Wild no longer shows as missing Mark of the Wild.
+
 ## 0.3.15 (2026-11-12)
 
 - Test mode shows debuffs fully in either dispel style: the invented players with a dispellable debuff get the coloured

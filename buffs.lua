@@ -77,7 +77,9 @@ function Buffs:All()
       end
     end
     if known and name then
-      e.name, e.icon, e.groupName = name, icon, groupName and M.Knows(groupName) and groupName or nil
+      -- groupName is for casting, so only when you know it; partyName is for reading, so someone else's Gift of the Wild
+      -- counts as Mark of the Wild even before you've learned Gift yourself
+      e.name, e.icon, e.groupName, e.partyName = name, icon, groupName and M.Knows(groupName) and groupName or nil, groupName
       e.who, e.known = self:Who(base), true
       out[#out + 1] = e
     end
@@ -144,7 +146,7 @@ function Buffs:State(b, e)
   local unit = b.unit
   if e.who == "mana" and M.Plain(UnitPowerType, unit) ~= 0 then return nil end
   if e.who == "tanks" and M.UF:Role(b) ~= "TANK" then return nil end
-  local names = e.blessing and e.names or { e.name, e.groupName }
+  local names = e.blessing and e.names or { e.name, e.partyName }
   local soon = (M.db.rebuffMinutes or 5) * 60
   local now = GetTime()
   local best
