@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.21 (2026-11-23)
+
+- Overhealing runs past the end of the health bar as an amber tail, instead of a thin edge. It's the same scale as the bar,
+  so a longer tail is more overhealing on the way, up to a quarter of a bar.
+
 ## 0.3.20 (2026-11-23)
 
 - Overhealing: a thin amber edge lights right of someone's health bar when the heals on the way (yours and others') are

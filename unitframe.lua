@@ -235,13 +235,14 @@ function UF:Create(parent, unit, name)
   local after = b.incAll:GetStatusBarTexture() or b.incAll
   b.absorb:SetPoint("TOPLEFT", after, "TOPRIGHT")
   b.absorb:SetPoint("BOTTOMLEFT", after, "BOTTOMRIGHT")
-  -- overhealing on the way: the incoming heals again, unclipped by the bar, seen only through a thin window just right of it.
-  -- What spills past full health lights that edge amber. The game keeps health and heals secret, so this is drawn, not
-  -- counted: no number, and it shows heals being cast (yours and others'), not what landed.
+  -- overhealing on the way: the incoming heals again, unclipped by the bar, seen only through a window right of it, so
+  -- what spills past full health runs on as an amber tail at the bar's own scale. The game keeps health and heals secret, so
+  -- it's drawn, not counted: no number, and heals being cast (yours and others'), not what landed. The tail lies over the
+  -- next column: above its bars, under its text and icons.
   b.overClip = CreateFrame("Frame", nil, b.content)
   if b.overClip.SetClipsChildren then b.overClip:SetClipsChildren(true) end
-  b.overClip:SetFrameLevel(b.clip:GetFrameLevel() + 1)
-  b.over = statusbar(b.overClip, 1, 0.68, 0.2, 0.95, ART.health)
+  b.overClip:SetFrameLevel(b.content:GetFrameLevel() + 3)
+  b.over = statusbar(b.overClip, 1, 0.68, 0.2, 0.9, ART.health)
   b.over:SetPoint("TOPLEFT", fill, "TOPRIGHT")
   b.over:SetPoint("BOTTOMLEFT", fill, "BOTTOMRIGHT")
 
@@ -375,9 +376,10 @@ function UF:ApplyLayout(b, key)
   local barWidth = L.w - PAD * 2
   for _, s in ipairs({ b.incAll, b.incMine, b.absorb, b.over }) do s:SetWidth(barWidth) end
   b.overClip:ClearAllPoints()
-  b.overClip:SetPoint("TOPLEFT", b.clip, "TOPRIGHT", 0, 0)
-  b.overClip:SetPoint("BOTTOMLEFT", b.clip, "BOTTOMRIGHT", 0, 0)
-  b.overClip:SetWidth(PAD + 1)
+  -- at most a quarter of a bar long, and a band a third of its height: the neighbour's health must still read round it
+  b.overClip:SetPoint("LEFT", b.clip, "RIGHT", 0, 0)
+  b.overClip:SetWidth(math.floor(barWidth / 4))
+  b.overClip:SetHeight(math.max(5, math.floor((L.h - PAD * 2 - (showPower and (L.power + 1) or 0)) / 3)))
   b.overClip:SetShown(M.db.overheal ~= false)
   -- the name and, under it, missing health or the status, centred on the bar
   local twoLines = key ~= "tiny"
