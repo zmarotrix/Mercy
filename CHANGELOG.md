@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.18 (2026-11-23)
+
+- Warlocks: your imp's Fire Shield is a tracked buff, for tanks by default, while an imp that knows it is out. The rebuff
+  button and Buff binds cast it through the imp.
+- Short buffs count as running out in their last quarter instead of the last 5 minutes, so Thorns and Fire Shield aren't
+  flagged the moment they land.
+
 ## 0.3.17 (2026-11-23)
 
 - Fixed buff reminders calling people buffed by someone else's Gift of the Wild (or Prayer of Fortitude, Arcane Brilliance)

@@ -25,6 +25,10 @@ Buffs.LIST = {
     { key = "wild", id = 1126, group = 21849, who = "all", on = true },
     { key = "thorns", id = 467, who = "tanks", on = true },
   },
+  WARLOCK = {
+    -- your imp's: tracked while an imp that knows it is out; the button and Buff binds cast it through the pet
+    { key = "fireshield", id = 2947, pet = true, who = "tanks", on = true },
+  },
   MAGE = {
     { key = "intellect", id = 1459, group = 23028, who = "mana", on = true },
   },
@@ -34,6 +38,24 @@ Buffs.LIST = {
       ids = { 19740, 19742, 20217, 1038, 19977, 20911, 25782, 25894, 25898, 25895, 25890, 25899 } },
   },
 }
+---Does your pet know this spell now? By id, then by name through the pet's spellbook (a pet may list only its best rank).
+local function petKnows(id, name)
+  if M.Plain(UnitExists, "pet") ~= true then return false end
+  local SB = rawget(_G, "C_SpellBook")
+  local bank = Enum and Enum.SpellBookSpellBank and Enum.SpellBookSpellBank.Pet
+  if SB and bank then
+    if SB.IsSpellKnown and M.Plain(SB.IsSpellKnown, id, bank) == true then return true end
+    local n = SB.HasPetSpells and M.Plain(SB.HasPetSpells)
+    if type(n) == "number" and name and SB.GetSpellBookItemName then
+      for i = 1, n do
+        if M.Plain(SB.GetSpellBookItemName, i, bank) == name then return true end
+      end
+    end
+  end
+  local legacy = M.Fn(nil, "IsSpellKnown")
+  return legacy and M.Plain(legacy, id, true) == true or false
+end
+
 local GROUP_SIZE = 3   -- this many in one party missing it: cast the group version
 
 local function spellInfo(id)
@@ -68,6 +90,7 @@ function Buffs:All()
     local name, icon = spellInfo(e.id)
     local groupName = e.group and spellInfo(e.group)
     local known = (name and M.Knows(name)) or (groupName and M.Knows(groupName))
+    if e.pet then known = name and petKnows(e.id, name) end
     if e.blessing then
       known = false
       e.names = {}
@@ -156,12 +179,13 @@ function Buffs:Worn(unit)
       readable = true
       local name = a.name
       if type(name) == "string" and not M.IsSecret(name) then
-        local exp, src = a.expirationTime, a.sourceUnit
+        local exp, src, dur = a.expirationTime, a.sourceUnit, a.duration
         exp = (type(exp) == "number" and not M.IsSecret(exp)) and exp or 0
+        dur = (type(dur) == "number" and not M.IsSecret(dur)) and dur or 0
         local mine = not M.IsSecret(src) and src == "player"
         local old = out[name]
         -- two of the same name (Mark from one druid, Gift from another): keep the longer
-        if not old or (old.expires > 0 and (exp == 0 or exp > old.expires)) then out[name] = { expires = exp, mine = mine } end
+        if not old or (old.expires > 0 and (exp == 0 or exp > old.expires)) then out[name] = { expires = exp, duration = dur, mine = mine } end
         if old and (old.mine or mine) then out[name].mine = true end
       end
     end
@@ -186,19 +210,22 @@ function Buffs:State(b, e)
   local worn = self:Worn(unit)
   local best
   for _, name in pairs(self:Names(e)) do
-    local expires, found
+    local expires, duration, found
     local w = worn and worn[name]
     if w then
-      found, expires = not e.blessing or w.mine, w.expires
+      found, expires, duration = not e.blessing or w.mine, w.expires, w.duration
     else
       -- the client wouldn't list them, or listed them without this one: ask by name too
       local aura = M.Plain(M.Fn("C_UnitAuras", "GetAuraDataBySpellName"), unit, name, "HELPFUL")
       if type(aura) == "table" then
-        found, expires = not e.blessing or aura.sourceUnit == "player", aura.expirationTime
+        found, expires, duration = not e.blessing or aura.sourceUnit == "player", aura.expirationTime, aura.duration
       end
     end
     if found then
-      if type(expires) ~= "number" or expires <= 0 or expires - now > soon then return "has" end
+      -- "running out" is the last 5 minutes (your setting), or the last quarter of a short buff: Thorns, Fire Shield
+      local window = soon
+      if type(duration) == "number" and duration > 0 then window = math.min(soon, duration / 4) end
+      if type(expires) ~= "number" or expires <= 0 or expires - now > window then return "has" end
       best = "expiring"
     end
   end
@@ -505,6 +532,9 @@ Core:OnLogin(function()
   Core:On("PLAYER_REGEN_ENABLED", Buffs, function() Buffs:ScanSoon() end)
   Core:On("PLAYER_REGEN_DISABLED", Buffs, function() Buffs:HideAll() end)   -- still allowed to hide here: lockdown starts after
   Core:On("LEARNED_SPELL_IN_TAB", Buffs, function() Buffs:Reset() end)
+  -- your pet came or went (an imp's Fire Shield): which buffs you can give changed
+  Core:On("UNIT_PET", Buffs, function() if M.class == "WARLOCK" then Buffs:Reset() end end)
+  Core:On("PET_BAR_UPDATE", Buffs, function() if M.class == "WARLOCK" then Buffs:Reset() end end)
   Core:On("UNIT_LEVEL", Buffs, function() if not M.InCombat() then Buffs:ScanSoon() end end)
   if C_Timer and C_Timer.NewTicker then C_Timer.NewTicker(15, function() if not M.InCombat() then Buffs:Scan() end end) end
 end)
