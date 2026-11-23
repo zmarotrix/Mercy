@@ -41,6 +41,7 @@ Core:NewAddon("mercy", {
       if rest == "" then M.Import:FromHealersMate(true) else M.Import:FromString(rest) end
     end, "[string]: binds from HealersMate, or from a string" },
     status = { function() M:PrintStatus() end, "what the client allows here" },
+    buffs = { function() M.Buffs:Report() end, "what buff reminders read on your target (for bug reports)" },
     clicks = { function()
       M.debugClicks = not M.debugClicks
       M:Print(M.debugClicks and "Click report on: each click on a frame prints what the game did with it. /mercy clicks again to stop."

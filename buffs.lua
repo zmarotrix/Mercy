@@ -141,24 +141,97 @@ function Buffs:Reset()
   self:ScanSoon()
 end
 
+---Everything someone wears, read once per scan: { [name] = { expires, mine } }, or nil if the client won't say.
+---Read by index rather than asked by name: a by-name lookup can miss another caster's version of the buff.
+function Buffs:Worn(unit)
+  self.wornCache = self.wornCache or {}
+  local cached = self.wornCache[unit]
+  if cached ~= nil then return cached or nil end
+  local get = M.Fn("C_UnitAuras", "GetAuraDataByIndex")
+  local out, readable = {}, false
+  if get then
+    for i = 1, 60 do
+      local ok, a = pcall(get, unit, i, "HELPFUL")
+      if not ok or a == nil or M.IsSecret(a) or type(a) ~= "table" then break end
+      readable = true
+      local name = a.name
+      if type(name) == "string" and not M.IsSecret(name) then
+        local exp, src = a.expirationTime, a.sourceUnit
+        exp = (type(exp) == "number" and not M.IsSecret(exp)) and exp or 0
+        local mine = not M.IsSecret(src) and src == "player"
+        local old = out[name]
+        -- two of the same name (Mark from one druid, Gift from another): keep the longer
+        if not old or (old.expires > 0 and (exp == 0 or exp > old.expires)) then out[name] = { expires = exp, mine = mine } end
+        if old and (old.mine or mine) then out[name].mine = true end
+      end
+    end
+  end
+  self.wornCache[unit] = readable and out or false
+  return readable and out or nil
+end
+
+---The names that count as having this buff: itself and its group version (Mark of the Wild and Gift of the Wild).
+function Buffs:Names(e)
+  if e.blessing then return e.names end
+  return { e.name, e.partyName }
+end
+
 ---"has", "expiring" or "missing" for one person and one buff; nil if it isn't theirs to have.
 function Buffs:State(b, e)
   local unit = b.unit
   if e.who == "mana" and M.Plain(UnitPowerType, unit) ~= 0 then return nil end
   if e.who == "tanks" and M.UF:Role(b) ~= "TANK" then return nil end
-  local names = e.blessing and e.names or { e.name, e.partyName }
   local soon = (M.db.rebuffMinutes or 5) * 60
   local now = GetTime()
+  local worn = self:Worn(unit)
   local best
-  for _, name in pairs(names) do
-    local aura = M.Plain(M.Fn("C_UnitAuras", "GetAuraDataBySpellName"), unit, name, "HELPFUL")
-    if type(aura) == "table" and (not e.blessing or aura.sourceUnit == "player") then
-      local expires = aura.expirationTime
+  for _, name in pairs(self:Names(e)) do
+    local expires, found
+    local w = worn and worn[name]
+    if w then
+      found, expires = not e.blessing or w.mine, w.expires
+    else
+      -- the client wouldn't list them, or listed them without this one: ask by name too
+      local aura = M.Plain(M.Fn("C_UnitAuras", "GetAuraDataBySpellName"), unit, name, "HELPFUL")
+      if type(aura) == "table" then
+        found, expires = not e.blessing or aura.sourceUnit == "player", aura.expirationTime
+      end
+    end
+    if found then
       if type(expires) ~= "number" or expires <= 0 or expires - now > soon then return "has" end
       best = "expiring"
     end
   end
   return best or "missing"
+end
+
+---/mercy buffs: what Mercy reads on your target (or you) and what it decides, for bug reports.
+function Buffs:Report()
+  local unit = M.Plain(UnitExists, "target") and "target" or "player"
+  self.wornCache = nil
+  local worn = self:Worn(unit)
+  M:Print(("Buffs on %s (%s):"):format(tostring(M.Plain(UnitName, unit) or unit), unit))
+  if not worn then
+    M:Print("  the client won't list them (by index)")
+  else
+    local list = {}
+    for name, w in pairs(worn) do
+      list[#list + 1] = name .. (w.mine and " (yours)" or "") .. (w.expires > 0 and (" %dm"):format((w.expires - GetTime()) / 60) or "")
+    end
+    table.sort(list)
+    M:Print("  wearing: " .. (#list > 0 and table.concat(list, ", ") or "nothing"))
+  end
+  local active = self:Active()
+  if #active == 0 then M:Print("  no buffs tracked for your class") end
+  for _, e in ipairs(active) do
+    local names = {}
+    for _, n in pairs(self:Names(e)) do names[#names + 1] = n end
+    local fake = { unit = unit }
+    local ok, state = pcall(self.State, self, fake, e)
+    M:Print(("  %s [%s] looks for %s: %s"):format(e.name or e.key, e.who, table.concat(names, " / "),
+      ok and tostring(state or "not theirs") or ("error " .. tostring(state))))
+  end
+  self.wornCache = nil
 end
 
 -------------------------------------------------------------------------------------------
@@ -178,6 +251,7 @@ function Buffs:Scan()
   if not (M.db and M.Groups and M.Groups.built) then return end
   if M.InCombat() or not M.db.buffReminders then self:HideAll() return end
   local active = self:Active()
+  self.wornCache = {}
   for key, g in pairs(M.Groups.frames) do
     if SCANNED[key] then
       local counts, needers = {}, {}

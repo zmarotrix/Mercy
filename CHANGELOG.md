@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.17 (2026-11-23)
+
+- Fixed buff reminders calling people buffed by someone else's Gift of the Wild (or Prayer of Fortitude, Arcane Brilliance)
+  "missing": Mercy now reads each person's buff list instead of asking the game for one buff by name.
+- `/mercy buffs` reports what Mercy reads on your target (or you) and what it decides about each buff, for bug reports.
+
 ## 0.3.16 (2026-11-23)
 
 - Mana bars show for everyone by default (Settings, Mana bar: Everyone). A setting you've already chosen is kept.
