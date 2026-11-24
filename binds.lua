@@ -415,12 +415,10 @@ function Binds:PostClick(button, mouse, down)
   end
 end
 
----Your own role marks, per realm, by name: for people the game has no role for. They only sort and label.
+---Your own role marks, by name: for people the game has no role for. They only sort and label.
 function Binds:Roles()
-  local realm = M.Plain(GetRealmName) or "?"
   M.db.roles = M.db.roles or {}
-  M.db.roles[realm] = M.db.roles[realm] or {}
-  return M.db.roles[realm]
+  return M.db.roles
 end
 
 function Binds:SetRole(unit, role)

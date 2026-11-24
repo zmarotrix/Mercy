@@ -74,6 +74,30 @@ end
 -- Building (out of combat)
 -------------------------------------------------------------------------------------------
 
+local ACCENT = UI.Accent("mercy")
+local WHITE = { 1, 1, 1 }
+local PANEL_RADIUS = 10   -- the suite windows' corners
+local PANEL_WASH = .08    -- how strongly the accent washes a panel's top: a window's .16 cost the names contrast over snow
+
+---The panel behind a group, in the suite's materials. It can be see-through, so its stone isn't tinted, and its shadow
+---is only what falls outside it.
+local function dressPanel(panel)
+  panel.shadow = UI.ShadowRing(panel, -8)
+  panel.fill = UI.Round(panel, "BACKGROUND", -7, PANEL_RADIUS)
+  panel.wash = UI.Wash(panel, "BACKGROUND", -6, PANEL_RADIUS, 30)   -- 40 px in all: shorter than any panel
+  panel.sheen = UI.Sheen(panel, "BACKGROUND", -5)
+end
+
+---All of it at one opacity (the group's setting).
+local function paintPanel(panel, alpha)
+  if panel.painted == alpha then return end   -- FitPanel runs whenever someone shows or hides
+  panel.painted = alpha
+  panel.shadow:SetColor(WHITE, alpha)
+  panel.fill:SetColor(UI.C.stone, alpha)
+  panel.wash:SetColor(ACCENT, PANEL_WASH * alpha)
+  panel.sheen:SetColor(WHITE, alpha)
+end
+
 local function makeLabel(g, key)
   local label = CreateFrame("Button", nil, g)
   label:SetHeight(16)
@@ -82,7 +106,7 @@ local function makeLabel(g, key)
   label.text = label:CreateFontString(nil, "OVERLAY")
   label.text:SetFontObject(UI.Font("title", 13))
   label.text:SetPoint("LEFT", 2, 0)
-  local c = UI.C.goldSoft
+  local c = UI.AccentText("mercy")
   label.text:SetTextColor(c[1], c[2], c[3])
   label.text:SetText(Groups.DEFS[key].label)
   label:RegisterForDrag("LeftButton")
@@ -125,10 +149,8 @@ function Groups:BuildGroup(key)
   g.panel:SetPoint("TOPLEFT", g, "TOPLEFT", -6, 22)
   g.panel:SetSize(10, 10)   -- Groups:FitPanel sizes it to the frames showing
   g.panel:SetFrameLevel(math.max(g:GetFrameLevel() - 1, 0))
-  g.panel.fill = UI.Round(g.panel, "BACKGROUND", -8, 8)
-  g.panel.fill:SetColor(UI.C.stone, 0.88)
-  g.panel.line = UI.Round(g.panel, "BORDER", 0, 8, "line")
-  g.panel.line:SetColor(UI.C.lineStrong, 0.9)
+  dressPanel(g.panel)
+  paintPanel(g.panel, 0.88)
   g.label = makeLabel(g, key)
   -- how many need a dispel (in combat too) and your buffs (out of combat), on the label's right
   -- in a strip along the panel's bottom, so the group's name has the top to itself
@@ -409,8 +431,7 @@ function Groups:FitPanel(g)
   local showAll = M.showAll
   local showPanel = M.db.panels and (showAll or not empty or not M.db.hideEmpty)
   local alpha = M:Group(g.key).alpha or 0.88
-  g.panel.fill:SetColor(UI.C.stone, alpha)
-  g.panel.line:SetColor(UI.C.lineStrong, math.min(0.9, alpha * 1.1))
+  paintPanel(g.panel, alpha)
   g.panel:SetShown(showPanel and true or false)
   -- the name: on its panel, or as the handle to drag the group by while the frames are unlocked; never for an empty group
   local showLabel = showAll or showPanel or (not empty and Groups:CanDrag())

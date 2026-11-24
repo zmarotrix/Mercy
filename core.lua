@@ -12,7 +12,7 @@ local Core = NorgannonCore
 
 if not (Core and Core.NewAddon) then
   Mercy = { disabled = true }
-  print("Mercy needs Norgannon Core 1.26 or newer; it is turned off.")
+  print("Mercy needs Norgannon Core 1.35 or newer; it is turned off.")
   return
 end
 
@@ -23,7 +23,7 @@ local M = Mercy
 -- no main window: a click or right-click opens its settings window, and Shift-click locks or unlocks the frames.
 -- Its saved data stays its own (M:InitDB), because of the schema steps below.
 Core:NewAddon("mercy", {
-  folder = ADDON, api = { 1, 26 },
+  folder = ADDON, api = { 1, 35 },
   slash = { "/mercy" },
   commands = {
     binds = { function() M:OpenSettings("binds") end, "the click-casting tab" },
@@ -185,6 +185,20 @@ function M:InitDB()
   if self.db.schema < 7 then
     self.db.highlight = "blizzard"
     self.db.schema = 7
+  end
+  -- 0.3.25: your own role marks were kept per realm, and the game stopped naming the realm on 2026-11-20: the marks made
+  -- before were lost, and new ones went under "". Now there's one list. Marks made since win.
+  if self.db.schema < 8 then
+    local merged, realms = {}, {}
+    for realm, marks in pairs(self.db.roles or {}) do
+      if type(marks) == "table" then realms[#realms + 1] = realm else merged[realm] = marks end
+    end
+    table.sort(realms, function(a, b) return a > b end)   -- "" last
+    for _, realm in ipairs(realms) do
+      for name, role in pairs(self.db.roles[realm]) do merged[name] = role end
+    end
+    self.db.roles = merged
+    self.db.schema = 8
   end
   for _, key in ipairs(self.GROUPS) do self:Group(key) end
   local char = rawget(_G, "MercyCharDB")

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.27 (2026-11-23)
+
+- Group panels no longer have a darker rim just inside their edge. 0.3.26's shadow reached 3 px under the panel, which
+  showed over bright ground.
+- Needs Norgannon Core 1.35 or newer.
+
+## 0.3.26 (2026-11-23)
+
+- **Group panels match the suite's new windows.** The brown outline is gone: a rounded panel with a soft shadow, light along
+  the top and a faint wash of Mercy's colour, all fading with each group's opacity. Its stone is as dark as before, and the
+  group's name is in Mercy's colour, easier to read over bright ground.
+- Needs Norgannon Core 1.33 or newer.
+
+## 0.3.25 (2026-11-23)
+
+- **Your own role marks are back.** They were kept per realm, and since 20 November 2026 the game names no realm. There's
+  one list now.
+
 ## 0.3.24 (2026-11-23)
 
 - Click-casting is the first tab in settings, and the one the window opens on.
