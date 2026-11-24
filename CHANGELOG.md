@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.23 (2026-11-23)
+
+- Mouse buttons are listed as Left, Middle, Right, Back, Forward, in the bind editor and the tooltip.
+
 ## 0.3.22 (2026-11-23)
 
 - The overhealing tail has a rounded end and the same soft shading as the health bar.

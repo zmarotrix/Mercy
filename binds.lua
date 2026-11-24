@@ -23,8 +23,8 @@ Binds.MODS = {
 }
 Binds.BUTTONS = {
   { key = "Left", suffix = "1", click = "LeftButton", label = "Left" },
-  { key = "Right", suffix = "2", click = "RightButton", label = "Right" },
   { key = "Middle", suffix = "3", click = "MiddleButton", label = "Middle" },
+  { key = "Right", suffix = "2", click = "RightButton", label = "Right" },
   { key = "Button4", suffix = "4", click = "Button4", label = "Back" },        -- the side buttons, as most mice name them
   { key = "Button5", suffix = "5", click = "Button5", label = "Forward" },
 }
