@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.24 (2026-11-23)
+
+- Click-casting is the first tab in settings, and the one the window opens on.
+
 ## 0.3.23 (2026-11-23)
 
 - Mouse buttons are listed as Left, Middle, Right, Back, Forward, in the bind editor and the tooltip.

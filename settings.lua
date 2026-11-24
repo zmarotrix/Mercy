@@ -11,7 +11,7 @@ local Settings = { panes = {} }
 M.Settings = Settings
 
 local W, H = 640, 580
-local TABS = { { key = "frames", label = "Frames" }, { key = "binds", label = "Click-casting" },
+local TABS = { { key = "binds", label = "Click-casting" }, { key = "frames", label = "Frames" },
   { key = "indicators", label = "Indicators" }, { key = "buffs", label = "Buffs" } }
 
 ---The window's tabs: HealersMate's (bringing its binds over) only when HealersMate is installed.
@@ -497,7 +497,7 @@ function Settings:Open(tab)
     tab = nil
   end
   if tab and self.panes[tab] then self.tab = tab end
-  self.tab = self.tab or "frames"
+  self.tab = self.tab or TABS[1].key
   win.tabs:Select(self.tab, true)
   win:Show()
   show(self.tab)
