@@ -31,7 +31,8 @@ Binds.BUTTONS = {
 Binds.SETS = { "friendly", "hostile" }
 Binds.SPECIAL = { "Target", "Assist", "Focus", "Context", "Follow", "Buff", "Role", "Role: Tank", "Role: Healer", "Role: Damage", "Role: None" }
 
-Binds.RES = { PRIEST = "Resurrection", PALADIN = "Redemption", SHAMAN = "Ancestral Spirit", DRUID = "Rebirth" }
+Binds.RES = { PRIEST = "Resurrection", PALADIN = "Redemption", SHAMAN = "Ancestral Spirit", DRUID = "Revive" }
+Binds.BATTLE_RES = { DRUID = "Rebirth" }   -- cast on the dead in combat only: it has a long cooldown
 
 local DEFAULTS = {
   PRIEST = { none = { Left = "Flash Heal", Right = "Renew", Middle = "Dispel Magic" },
@@ -255,20 +256,21 @@ function Binds:Unbound(set)
   return out
 end
 
----The resurrection spell you know, or nil.
-function Binds:ResSpell()
-  local spell = self.RES[M.class or M.PlayerClass() or ""]
-  if spell and M.Knows(spell) then return spell end
+---The resurrection you know, and the one for combat: either may be nil.
+function Binds:ResSpells()
+  local class = M.class or M.PlayerClass() or ""
+  local res, battle = self.RES[class], self.BATTLE_RES[class]
+  return res and M.Knows(res) and res or nil, battle and M.Knows(battle) and battle or nil
 end
 
 ---A spell turned into a macro when it should also resurrect the dead or target the unit.
-local function spellMacro(spell, unit, res, target)
+local function spellMacro(spell, unit, res, battleRes, target)
   local lines = {}
-  if res then
-    lines[#lines + 1] = ("/cast [@%s,dead] %s; [@%s] %s"):format(unit, res, unit, spell)
-  else
-    lines[#lines + 1] = ("/cast [@%s] %s"):format(unit, spell)
-  end
+  local parts = {}
+  if battleRes then parts[#parts + 1] = ("[@%s,dead,combat] %s"):format(unit, battleRes) end
+  if res then parts[#parts + 1] = ("[@%s,dead] %s"):format(unit, res) end
+  parts[#parts + 1] = ("[@%s] %s"):format(unit, spell)
+  lines[#lines + 1] = "/cast " .. table.concat(parts, "; ")
   if target then lines[#lines + 1] = "/target " .. unit end
   return table.concat(lines, "\n")
 end
@@ -288,7 +290,8 @@ function Binds:Attributes(unit, button)
     useOnKeyDown = M.db.castOn == "down",
   }
   for _, b in ipairs(self.BUTTONS) do attrs["*harmbutton" .. b.suffix] = "hostile" .. b.suffix end
-  local res = M.db.autoRes and self:ResSpell() or nil
+  local res, battleRes
+  if M.db.autoRes then res, battleRes = self:ResSpells() end
   for _, set in ipairs(self.SETS) do
     for _, mod in ipairs(self.MODS) do
       for _, b in ipairs(self.BUTTONS) do
@@ -308,7 +311,7 @@ function Binds:Attributes(unit, button)
           elseif a.isSpell then
             local friendly = set == "friendly"
             attrs[p .. "type" .. suffix] = "macro"
-            attrs[p .. "macrotext" .. suffix] = spellMacro(a.spell, unit, friendly and res or nil, friendly and M.db.autoTarget)
+            attrs[p .. "macrotext" .. suffix] = spellMacro(a.spell, unit, friendly and res or nil, friendly and battleRes or nil, friendly and M.db.autoTarget)
           elseif UNIT_MACRO[a.type] then
             attrs[p .. "type" .. suffix] = "macro"
             attrs[p .. "macrotext" .. suffix] = UNIT_MACRO[a.type]:format(unit)

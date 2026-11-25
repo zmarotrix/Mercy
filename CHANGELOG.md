@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.28 (2026-11-24)
+
+- Druids: clicking a dead player casts Revive, and Rebirth only in combat, so Rebirth's cooldown isn't spent out of it.
+
 ## 0.3.27 (2026-11-23)
 
 - Group panels no longer have a darker rim just inside their edge. 0.3.26's shadow reached 3 px under the panel, which
